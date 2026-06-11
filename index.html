@@ -1,11 +1,19 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>GESTORFISCAL — Sistema de Triagem e Precificação 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        // Inicialização preemptiva do tema para evitar piscadas de tela (FOUC)
+        if (localStorage.getItem('gf_theme') === 'light') {
+            document.documentElement.classList.remove('dark');
+        } else {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
     <style>
         body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         
@@ -51,23 +59,32 @@
         }
     </style>
 </head>
-<body class="bg-[#020617] text-slate-100 min-h-screen flex flex-col pb-20 md:pb-0">
+<body class="bg-slate-50 text-slate-900 dark:bg-[#020617] dark:text-slate-100 min-h-screen flex flex-col pb-20 md:pb-0 transition-colors duration-200">
 
-    <header class="bg-[#0b1329] border-b border-slate-800 sticky top-0 z-50 no-print">
+    <!-- NAVBAR DESKTOP -->
+    <header class="bg-white border-b border-slate-200 dark:bg-[#0b1329] dark:border-slate-800 sticky top-0 z-50 no-print transition-colors duration-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-md">G</div>
-                <span class="text-lg font-black tracking-wider text-white">GESTORFISCAL</span>
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-md">G</div>
+                    <span class="text-lg font-black tracking-wider text-slate-900 dark:text-white">GESTORFISCAL</span>
+                </div>
+                <!-- BOTÃO TOGGLE TEMA (Acessível PC + Celular no topo) -->
+                <button onclick="toggleTheme()" class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition-all text-slate-700 dark:text-slate-300" title="Alternar Tema Visual">
+                    <svg id="theme-icon-sun" class="h-4 w-4 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707m2.828 9.9a5 5 0 117.072 0l-7.072 0z"/></svg>
+                    <svg id="theme-icon-moon" class="h-4 w-4 block dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 118.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                </button>
             </div>
             
-            <nav class="hidden md:flex space-x-1 bg-slate-900 p-1 rounded-lg border border-slate-800">
+            <!-- NAVEGAÇÃO DESKTOP -->
+            <nav class="hidden md:flex space-x-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-lg border border-slate-200 dark:border-slate-800">
                 <button id="dk-tab-dash" onclick="switchTab('dash')" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all bg-emerald-600 text-white shadow-sm">
                     Calculadora
                 </button>
-                <button id="dk-tab-hist" onclick="switchTab('hist')" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all text-slate-400 hover:text-white">
+                <button id="dk-tab-hist" onclick="switchTab('hist')" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">
                     Histórico
                 </button>
-                <button id="dk-tab-conf" onclick="switchTab('conf')" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all text-slate-400 hover:text-white">
+                <button id="dk-tab-conf" onclick="switchTab('conf')" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">
                     Configurações
                 </button>
             </nav>
@@ -78,8 +95,9 @@
         </div>
     </header>
 
-    <div id="bottom-mobile-nav" class="md:hidden fixed bottom-0 left-0 right-0 bg-[#0b1329] border-t border-slate-800 flex justify-around items-center h-16 z-50 no-print px-2">
-        <button id="mb-tab-dash" onclick="switchTab('dash')" class="flex flex-col items-center justify-center w-full h-full text-emerald-400 transition-all">
+    <!-- NAVEGAÇÃO MOBILE INFERIOR (Estilo Instagram) -->
+    <div id="bottom-mobile-nav" class="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-[#0b1329] border-t border-slate-200 dark:border-slate-800 flex justify-around items-center h-16 z-50 no-print px-2 transition-colors duration-200">
+        <button id="mb-tab-dash" onclick="switchTab('dash')" class="flex flex-col items-center justify-center w-full h-full text-emerald-600 dark:text-emerald-400 transition-all">
             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
             <span class="text-[10px] font-medium mt-1">Calculadora</span>
         </button>
@@ -93,8 +111,10 @@
         </button>
     </div>
 
+    <!-- CONTEÚDO PRINCIPAL -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 flex flex-col justify-center">
         
+        <!-- CABEÇALHO OCULTO NA INTERFACE - IMPRESSÃO PDF -->
         <div class="hidden print-header text-black">
             <div style="display: flex; justify-content: space-between; align-items: flex-end;">
                 <div>
@@ -112,6 +132,7 @@
             </div>
         </div>
 
+        <!-- TABELA DE IMPRESSÃO CORPORATIVA DO LOTE -->
         <table id="lote-print-table" class="hidden print-visible-report text-black">
             <thead>
                 <tr>
@@ -127,108 +148,121 @@
             <tbody id="lote-print-table-body"></tbody>
         </table>
 
+        <!-- ================= SEÇÃO: CALCULADORA ================= -->
         <div id="tab-content-dash" class="space-y-6 flex-1 flex flex-col justify-center">
             
-            <div id="upload-zone" class="bg-[#0b1329] border-2 border-dashed border-slate-700 rounded-xl p-8 sm:p-12 text-center max-w-2xl w-full mx-auto shadow-xl transition hover:border-emerald-500 group cursor-pointer no-print">
+            <!-- Zona de Upload -->
+            <div id="upload-zone" class="bg-white border-2 border-dashed border-slate-300 dark:bg-[#0b1329] dark:border-slate-700 rounded-xl p-8 sm:p-12 text-center max-w-2xl w-full mx-auto shadow-xl transition hover:border-emerald-500 group cursor-pointer no-print">
                 <input type="file" id="xml-input" accept=".xml" class="hidden" />
                 <label for="xml-input" class="cursor-pointer block">
-                    <svg class="mx-auto h-12 w-12 text-slate-500 group-hover:text-emerald-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="mx-auto h-12 w-12 text-slate-400 group-hover:text-emerald-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    <h3 class="mt-4 text-lg font-semibold text-white">Importar XML de NF-e</h3>
-                    <p class="mt-2 text-sm text-slate-400">Clique ou arraste o arquivo fiscal da nota para iniciar a triagem</p>
+                    <h3 class="mt-4 text-lg font-semibold text-slate-800 dark:text-white">Importar XML de NF-e</h3>
+                    <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Clique ou arraste o arquivo fiscal da nota para iniciar a triagem</p>
                 </label>
             </div>
 
+            <!-- Workflow Dinâmico Adaptativo -->
             <div id="dashboard" class="hidden flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start text-left">
                 
-                <div id="product-list-container" class="lg:col-span-4 bg-[#0b1329] border border-slate-800 rounded-xl shadow-xl overflow-hidden flex flex-col h-[160px] lg:h-[calc(100vh-14rem)] no-print">
-                    <div class="p-3 border-b border-slate-800 bg-slate-900/40 flex justify-between items-center">
-                        <h3 class="font-semibold text-white text-xs sm:text-sm">Fila de Itens (Seleção Livre)</h3>
-                        <span class="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono" id="progress-text">0/0</span>
+                <!-- Lista de Produtos (Seleção Livre) -->
+                <div id="product-list-container" class="lg:col-span-4 bg-white border border-slate-200 dark:bg-[#0b1329] dark:border-slate-800 rounded-xl shadow-xl overflow-hidden flex flex-col h-[160px] lg:h-[calc(100vh-14rem)] no-print">
+                    <div class="p-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 flex justify-between items-center">
+                        <h3 class="font-semibold text-slate-800 dark:text-white text-xs sm:text-sm">Fila de Itens (Seleção Livre)</h3>
+                        <span class="text-xs bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded font-mono" id="progress-text">0/0</span>
                     </div>
-                    <div id="product-list" class="divide-y divide-slate-800 overflow-y-auto flex-1"></div>
+                    <div id="product-list" class="divide-y divide-slate-200 dark:divide-slate-800 overflow-y-auto flex-1"></div>
                 </div>
 
+                <!-- Painel Central de Edição -->
                 <div class="lg:col-span-8 flex flex-col space-y-6">
-                    <div id="analysis-card" class="bg-[#0b1329] border border-slate-800 rounded-xl p-4 sm:p-6 shadow-xl space-y-6">
+                    <div id="analysis-card" class="bg-white border border-slate-200 dark:bg-[#0b1329] dark:border-slate-800 rounded-xl p-4 sm:p-6 shadow-xl space-y-6">
                         
-                        <div class="flex flex-col sm:flex-row justify-between sm:items-start border-b border-slate-800 pb-3 space-y-2 sm:space-y-0">
+                        <!-- Cabeçalho Item -->
+                        <div class="flex flex-col sm:flex-row justify-between sm:items-start border-b border-slate-200 dark:border-slate-800 pb-3 space-y-2 sm:space-y-0">
                             <div>
-                                <span class="text-[10px] sm:text-xs font-semibold text-emerald-400 tracking-wider uppercase font-mono" id="view-ncm">NCM: -</span>
-                                <h2 class="text-base sm:text-xl font-bold text-white mt-0.5" id="view-title">-</h2>
+                                <span class="text-[10px] sm:text-xs font-semibold text-emerald-600 dark:text-emerald-400 tracking-wider uppercase font-mono" id="view-ncm">NCM: -</span>
+                                <h2 class="text-base sm:text-xl font-bold text-slate-900 dark:text-white mt-0.5" id="view-title">-</h2>
                             </div>
                             <div class="text-left sm:text-right">
-                                <span class="text-[10px] sm:text-xs text-slate-400 block">Custo de Fábrica ($C_U$)</span>
-                                <span class="text-lg sm:text-xl font-bold text-emerald-400 font-mono" id="view-cost">R$ 0,00</span>
+                                <span class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 block">Custo de Fábrica ($C_U$)</span>
+                                <span class="text-lg sm:text-xl font-bold text-emerald-600 dark:text-emerald-400 font-mono" id="view-cost">R$ 0,00</span>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-900/50 p-3 sm:p-4 rounded-xl border border-slate-800 no-print">
+                        <!-- Parâmetros de Entrada -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-100 dark:bg-slate-900/50 p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-800 no-print">
                             <div>
-                                <label class="block text-[10px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Frete / Agregados (%)</label>
-                                <input type="number" id="input-freight" value="5" class="w-full bg-[#020617] border border-slate-700 rounded-lg py-2 px-3 text-white font-mono text-base focus:outline-none focus:border-emerald-500">
+                                <label class="block text-[10px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Frete / Agregados (%)</label>
+                                <input type="number" id="input-freight" value="5" class="w-full bg-white dark:bg-[#020617] border border-slate-300 dark:border-slate-700 rounded-lg py-2 px-3 text-slate-900 dark:text-white font-mono text-base focus:outline-none focus:border-emerald-500">
                             </div>
                             <div>
-                                <label class="block text-[10px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">ICMS Entrada (%)</label>
-                                <input type="number" id="input-icms-in" value="12" class="w-full bg-[#020617] border border-slate-700 rounded-lg py-2 px-3 text-white font-mono text-base focus:outline-none focus:border-emerald-500">
+                                <label class="block text-[10px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">ICMS Entrada (%)</label>
+                                <input type="number" id="input-icms-in" value="12" class="w-full bg-white dark:bg-[#020617] border border-slate-300 dark:border-slate-700 rounded-lg py-2 px-3 text-slate-900 dark:text-white font-mono text-base focus:outline-none focus:border-emerald-500">
                             </div>
                             <div>
-                                <label class="block text-[10px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Margem Lucro (%)</label>
-                                <input type="number" id="margin-input" value="50" class="w-full bg-[#020617] border border-slate-700 rounded-lg py-2 px-3 text-emerald-400 font-mono text-base font-bold focus:outline-none focus:border-emerald-500">
+                                <label class="block text-[10px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Margem Lucro (%)</label>
+                                <input type="number" id="margin-input" value="50" class="w-full bg-white dark:bg-[#020617] border border-slate-300 dark:border-slate-700 rounded-lg py-2 px-3 text-emerald-600 dark:text-emerald-400 font-mono text-base font-bold focus:outline-none focus:border-emerald-500">
                             </div>
                         </div>
 
+                        <!-- CONTAINER DOS CARDS DOS REGIMES TRIBUTÁRIOS -->
                         <div id="regimes-container" class="grid grid-cols-1 gap-4">
-                            <div id="card-mei" class="bg-[#111c44]/40 border border-slate-800 rounded-xl p-4 transition-all">
-                                <div class="flex justify-between items-center border-b border-slate-800/60 pb-1.5 mb-1.5">
-                                    <h4 class="font-bold text-slate-200 text-xs sm:text-sm">MEI</h4>
-                                    <span class="text-[9px] font-mono text-slate-500">DAS Fixo Mensal</span>
+                            <!-- MEI -->
+                            <div id="card-mei" class="bg-slate-50 border border-slate-200 dark:bg-[#111c44]/40 dark:border-slate-800 rounded-xl p-4 transition-all">
+                                <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800/60 pb-1.5 mb-1.5">
+                                    <h4 class="font-bold text-slate-700 dark:text-slate-200 text-xs sm:text-sm">MEI</h4>
+                                    <span class="text-[9px] font-mono text-slate-400 dark:text-slate-500">DAS Fixo Mensal</span>
                                 </div>
-                                <div class="text-xs space-y-1 text-slate-400 font-mono">
+                                <div class="text-xs space-y-1 text-slate-600 dark:text-slate-400 font-mono">
                                     <div class="flex justify-between"><span>Custo Efetivo ($C_{eff}$):</span><span id="calc-mei-ceff">R$ 0,00</span></div>
-                                    <div class="flex justify-between font-bold border-t border-slate-800/80 pt-1 text-emerald-400"><span>Preço Sugerido:</span><span id="total-mei">R$ 0,00</span></div>
+                                    <div class="flex justify-between font-bold border-t border-slate-200 dark:border-slate-800/80 pt-1 text-emerald-600 dark:text-emerald-400"><span>Preço Sugerido:</span><span id="total-mei">R$ 0,00</span></div>
                                 </div>
                             </div>
 
-                            <div id="card-simples" class="bg-[#111c44]/40 border border-slate-800 rounded-xl p-4 transition-all">
-                                <div class="flex justify-between items-center border-b border-slate-800/60 pb-1.5 mb-1.5">
-                                    <h4 class="font-bold text-slate-200 text-xs sm:text-sm">Simples Nacional</h4>
-                                    <span class="text-[9px] font-mono text-emerald-500">Alíquota Base Comércio</span>
+                            <!-- SIMPLES NACIONAL -->
+                            <div id="card-simples" class="bg-slate-50 border border-slate-200 dark:bg-[#111c44]/40 dark:border-slate-800 rounded-xl p-4 transition-all">
+                                <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800/60 pb-1.5 mb-1.5">
+                                    <h4 class="font-bold text-slate-700 dark:text-slate-200 text-xs sm:text-sm">Simples Nacional</h4>
+                                    <span class="text-[9px] font-mono text-slate-400 dark:text-emerald-500">Alíquota Base Comércio</span>
                                 </div>
-                                <div class="text-xs space-y-1 text-slate-400 font-mono">
+                                <div class="text-xs space-y-1 text-slate-600 dark:text-slate-400 font-mono">
                                     <div class="flex justify-between"><span>Custo Efetivo ($C_{eff}$):</span><span id="calc-simples-ceff">R$ 0,00</span></div>
-                                    <div class="flex justify-between"><span>Imposto DAS Saída (4,00%):</span><span class="text-red-400" id="calc-simples-das">R$ 0,00</span></div>
-                                    <div class="flex justify-between font-bold border-t border-slate-800/80 pt-1 text-emerald-400"><span>Preço Sugerido:</span><span id="total-simples">R$ 0,00</span></div>
+                                    <div class="flex justify-between"><span>Imposto DAS Saída (4,00%):</span><span class="text-red-600 dark:text-red-400" id="calc-simples-das">R$ 0,00</span></div>
+                                    <div class="flex justify-between font-bold border-t border-slate-200 dark:border-slate-800/80 pt-1 text-emerald-600 dark:text-emerald-400"><span>Preço Sugerido:</span><span id="total-simples">R$ 0,00</span></div>
                                 </div>
                             </div>
 
-                            <div id="card-presumido" class="bg-[#111c44]/40 border border-slate-800 rounded-xl p-4 transition-all">
-                                <div class="flex justify-between items-center border-b border-slate-800/60 pb-1.5 mb-1.5">
-                                    <h4 class="font-bold text-slate-200 text-xs sm:text-sm">Lucro Presumido</h4>
-                                    <span class="text-[9px] font-mono text-indigo-500">Alíquota Combinada</span>
+                            <!-- LUCRO PRESUMIDO -->
+                            <div id="card-presumido" class="bg-slate-50 border border-slate-200 dark:bg-[#111c44]/40 dark:border-slate-800 rounded-xl p-4 transition-all">
+                                <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800/60 pb-1.5 mb-1.5">
+                                    <h4 class="font-bold text-slate-700 dark:text-slate-200 text-xs sm:text-sm">Lucro Presumido</h4>
+                                    <span class="text-[9px] font-mono text-slate-400 dark:text-indigo-500">Alíquota Combinada</span>
                                 </div>
-                                <div class="text-xs space-y-1 text-slate-400 font-mono">
+                                <div class="text-xs space-y-1 text-slate-600 dark:text-slate-400 font-mono">
                                     <div class="flex justify-between"><span>Custo Efetivo ($C_{eff}$):</span><span id="calc-pres-ceff">R$ 0,00</span></div>
-                                    <div class="flex justify-between"><span>Impostos Totais (22,93%):</span><span class="text-red-400" id="calc-pres-taxes">R$ 0,00</span></div>
-                                    <div class="flex justify-between font-bold border-t border-slate-800/80 pt-1 text-emerald-400"><span>Preço Sugerido:</span><span id="total-presumido">R$ 0,00</span></div>
+                                    <div class="flex justify-between"><span>Impostos Totais (22,93%):</span><span class="text-red-600 dark:text-red-400" id="calc-pres-taxes">R$ 0,00</span></div>
+                                    <div class="flex justify-between font-bold border-t border-slate-200 dark:border-slate-800/80 pt-1 text-emerald-600 dark:text-emerald-400"><span>Preço Sugerido:</span><span id="total-presumido">R$ 0,00</span></div>
                                 </div>
                             </div>
 
-                            <div id="card-real" class="bg-[#111c44]/40 border border-slate-800 rounded-xl p-4 transition-all">
-                                <div class="flex justify-between items-center border-b border-slate-800/60 pb-1.5 mb-1.5">
-                                    <h4 class="font-bold text-slate-200 text-xs sm:text-sm">Lucro Real</h4>
-                                    <span class="text-[9px] font-mono text-orange-500">Regime Geral</span>
+                            <!-- LUCRO REAL -->
+                            <div id="card-real" class="bg-slate-50 border border-slate-200 dark:bg-[#111c44]/40 dark:border-slate-800 rounded-xl p-4 transition-all">
+                                <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800/60 pb-1.5 mb-1.5">
+                                    <h4 class="font-bold text-slate-700 dark:text-slate-200 text-xs sm:text-sm">Lucro Real</h4>
+                                    <span class="text-[9px] font-mono text-slate-400 dark:text-orange-500">Regime Geral</span>
                                 </div>
-                                <div class="text-xs space-y-1 text-slate-400 font-mono">
+                                <div class="text-xs space-y-1 text-slate-600 dark:text-slate-400 font-mono">
                                     <div class="flex justify-between"><span>Custo Efetivo ($C_{eff}$):</span><span id="calc-real-ceff">R$ 0,00</span></div>
-                                    <div class="flex justify-between"><span>Impostos Totais (34,94%):</span><span class="text-red-400" id="calc-real-taxes">R$ 0,00</span></div>
-                                    <div class="flex justify-between font-bold border-t border-slate-800/80 pt-1 text-emerald-400"><span>Preço Sugerido:</span><span id="total-real">R$ 0,00</span></div>
+                                    <div class="flex justify-between"><span>Impostos Totais (34,94%):</span><span class="text-red-600 dark:text-red-400" id="calc-real-taxes">R$ 0,00</span></div>
+                                    <div class="flex justify-between font-bold border-t border-slate-200 dark:border-slate-800/80 pt-1 text-emerald-600 dark:text-emerald-400"><span>Preço Sugerido:</span><span id="total-real">R$ 0,00</span></div>
                                 </div>
                             </div>
                         </div>
 
-                        <div id="actions-triage-zone" class="flex flex-col sm:flex-row justify-between items-center pt-4 border-t border-slate-800 no-print gap-3 sm:gap-0">
+                        <!-- Ações Inferiores -->
+                        <div id="actions-triage-zone" class="flex flex-col sm:flex-row justify-between items-center pt-4 border-t border-slate-200 dark:border-slate-800 no-print gap-3 sm:gap-0">
                             <button onclick="printLoteCompletoAtual()" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs sm:text-sm px-4 py-2.5 rounded-lg transition-all text-center">
                                 Imprimir Lote XML Completo
                             </button>
@@ -239,12 +273,13 @@
                         </div>
                     </div>
 
-                    <div id="export-card" class="hidden bg-[#0b1329] border border-slate-800 rounded-xl p-6 sm:p-8 text-center shadow-2xl max-w-xl mx-auto w-full space-y-4 no-print">
+                    <!-- CARD DE EXPORTAÇÃO FINAL -->
+                    <div id="export-card" class="hidden bg-white border border-slate-200 dark:bg-[#0b1329] dark:border-slate-800 rounded-xl p-6 sm:p-8 text-center shadow-2xl max-w-xl mx-auto w-full space-y-4 no-print">
                         <div class="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-2 border border-emerald-500/20">
                             <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
                         </div>
-                        <h2 class="text-xl font-bold text-white">Lote de NF-e Finalizado!</h2>
-                        <p class="text-slate-400 text-sm">Todos os produtos da fila foram parametrizados e processados localmente.</p>
+                        <h2 class="text-xl font-bold text-slate-900 dark:text-white">Lote de NF-e Finalizado!</h2>
+                        <p class="text-slate-500 dark:text-slate-400 text-sm">Todos os produtos da fila foram parametrizados e processados localmente.</p>
                         
                         <div class="pt-2 space-y-3">
                             <button id="btn-export" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-lg transition-all shadow-md">
@@ -259,13 +294,14 @@
             </div>
         </div>
 
+        <!-- ================= SEÇÃO: HISTÓRICO LOCAL ================= -->
         <div id="tab-content-hist" class="hidden space-y-6 no-print">
-            <div class="bg-[#0b1329] border border-slate-800 rounded-xl p-4 sm:p-6 shadow-xl text-left">
-                <h2 class="text-lg font-bold text-white mb-1">Histórico Local de Processamentos</h2>
-                <p class="text-xs text-slate-400 mb-6">Notas auditadas neste dispositivo. Imprima o PDF do lote baseado no regime oficial.</p>
+            <div class="bg-white border border-slate-200 dark:bg-[#0b1329] dark:border-slate-800 rounded-xl p-4 sm:p-6 shadow-xl text-left">
+                <h2 class="text-lg font-bold text-slate-900 dark:text-white mb-1">Histórico Local de Processamentos</h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">Notas auditadas neste dispositivo. Imprima o PDF do lote baseado no regime oficial.</p>
                 <div class="overflow-x-auto -mx-4 sm:mx-0">
-                    <table class="w-full text-sm text-left text-slate-300 min-w-[500px]">
-                        <thead class="text-xs uppercase bg-slate-900 text-slate-500 tracking-wider">
+                    <table class="w-full text-sm text-left text-slate-600 dark:text-slate-300 min-w-[500px]">
+                        <thead class="text-xs uppercase bg-slate-100 dark:bg-slate-900 text-slate-500 tracking-wider">
                             <tr>
                                 <th class="px-4 sm:px-6 py-3 font-semibold">Data/Hora</th>
                                 <th class="px-4 sm:px-6 py-3 font-semibold">Nome da Nota XML</th>
@@ -273,23 +309,24 @@
                                 <th class="px-4 sm:px-6 py-3 font-semibold text-center">Ações</th>
                             </tr>
                         </thead>
-                        <tbody id="history-table-body" class="divide-y divide-slate-800"></tbody>
+                        <tbody id="history-table-body" class="divide-y divide-slate-200 dark:divide-slate-800"></tbody>
                     </table>
                 </div>
             </div>
         </div>
 
+        <!-- ================= SEÇÃO: CONFIGURAÇÕES COMPACTA ================= -->
         <div id="tab-content-conf" class="hidden space-y-6 max-w-2xl w-full mx-auto text-left no-print">
-            <div class="bg-[#0b1329] border border-slate-800 rounded-xl p-4 sm:p-6 shadow-xl space-y-6">
+            <div class="bg-white border border-slate-200 dark:bg-[#0b1329] dark:border-slate-800 rounded-xl p-4 sm:p-6 shadow-xl space-y-6">
                 <div>
-                    <h2 class="text-lg font-bold text-white mb-1">Configurações Gerais do Core</h2>
-                    <p class="text-xs text-slate-400">Fixar o regime oficial do cliente para moldar as saídas de relatórios do patrão.</p>
+                    <h2 class="text-lg font-bold text-slate-900 dark:text-white mb-1">Configurações Gerais do Core</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Fixar o regime oficial do cliente para moldar as saídas de relatórios do patrão.</p>
                 </div>
 
-                <div class="space-y-4 border-t border-slate-800 pt-4">
+                <div class="space-y-4 border-t border-slate-200 dark:border-slate-800 pt-4">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Enquadramento Fiscal Ativo</label>
-                        <select id="config-regime-select" disabled class="w-full bg-slate-950 border border-slate-800 text-slate-500 rounded-lg py-2.5 px-3 font-medium transition-all outline-none cursor-not-allowed text-base">
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Enquadramento Fiscal Ativo</label>
+                        <select id="config-regime-select" disabled class="w-full bg-slate-100 border border-slate-300 dark:bg-slate-950 dark:border-slate-800 text-slate-700 dark:text-slate-400 rounded-lg py-2.5 px-3 font-medium transition-all outline-none cursor-not-allowed text-base">
                             <option value="comparativo">Modo Demo / Comparativo Global</option>
                             <option value="mei">MEI</option>
                             <option value="simples">Simples Nacional</option>
@@ -299,27 +336,29 @@
                     </div>
                 </div>
 
-                <div id="adm-lock-zone" class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
-                    <div class="flex items-center space-x-2 text-indigo-400 font-semibold text-xs uppercase tracking-wider">
+                <!-- Chave Mestra ADM -->
+                <div id="adm-lock-zone" class="bg-slate-100 border border-slate-200 dark:bg-slate-950 dark:border-slate-800 rounded-xl p-4 space-y-3">
+                    <div class="flex items-center space-x-2 text-indigo-600 dark:text-indigo-400 font-semibold text-xs uppercase tracking-wider">
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                         <span>Painel Seguro do Administrador</span>
                     </div>
-                    <p class="text-xs text-slate-400">Insira a credencial mestre para liberar modificações no Core Tributário.</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Insira a credencial mestre para liberar modificações no Core Tributário.</p>
                     <div class="flex space-x-2">
-                        <input type="password" id="adm-password-input" placeholder="Senha Mestra" class="bg-[#020617] border border-slate-700 rounded-lg py-2 px-3 text-base outline-none focus:ring-1 focus:ring-emerald-500 text-white w-full">
+                        <input type="password" id="adm-password-input" placeholder="Senha Mestra" class="bg-white border border-slate-300 dark:bg-[#020617] dark:border-slate-700 rounded-lg py-2 px-3 text-base outline-none focus:ring-1 focus:ring-emerald-500 text-slate-900 dark:text-white w-full">
                         <button onclick="unlockSettings()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition-all shadow-md whitespace-nowrap">
                             Autenticar
                         </button>
                     </div>
                 </div>
                 
-                <div id="adm-unlocked-badge" class="hidden bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3 rounded-lg text-xs font-semibold">
+                <div id="adm-unlocked-badge" class="hidden bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 p-3 rounded-lg text-xs font-semibold">
                     Modo Administrativo Concedido. Alterações liberadas.
                 </div>
             </div>
         </div>
     </main>
 
+    <!-- MOTOR FISCAL INTEGRADO GESTORFISCAL -->
     <script>
         const TAX_RULES = {
             mei: { saida: 0.0, nome: "MEI" },
@@ -343,7 +382,18 @@
         const selectRegime = document.getElementById('config-regime-select');
         const activeRegimeBadge = document.getElementById('active-regime-badge');
 
-        // --- ENGENHARIA DE PERSISTÊNCIA INICIAL DO CORE TRIBUTÁRIO ---
+        // --- SISTEMA INTELLIGENT DE ALTERNAÇÃO DE TEMA (LIGHT / DARK) ---
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.contains('dark');
+            if (isDark) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('gf_theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('gf_theme', 'dark');
+            }
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
             const savedRegime = localStorage.getItem('gf_active_regime') || 'comparativo';
             selectRegime.value = savedRegime;
@@ -354,15 +404,15 @@
             const selectedText = selectRegime.options[selectRegime.selectedIndex].text;
             activeRegimeBadge.innerText = selectedText;
             if(value === 'comparativo') {
-                activeRegimeBadge.className = "text-xs bg-amber-500/10 text-amber-400 px-2.5 py-1 rounded-full font-semibold border border-amber-500/20";
+                activeRegimeBadge.className = "text-xs bg-amber-500/10 text-amber-500 dark:text-amber-400 px-2.5 py-1 rounded-full font-semibold border border-amber-500/20";
             } else {
-                activeRegimeBadge.className = "text-xs bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-full font-semibold border border-emerald-500/20";
+                activeRegimeBadge.className = "text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-1 rounded-full font-semibold border border-emerald-500/20";
             }
         }
 
         selectRegime.addEventListener('change', () => {
             const currentVal = selectRegime.value;
-            localStorage.setItem('gf_active_regime', currentVal); // PERSISTÊNCIA ATIVA NO LOCALSTORAGE
+            localStorage.setItem('gf_active_regime', currentVal);
             updateRegimeUI(currentVal);
             if(produtos.length > 0) calculatePrices();
         });
@@ -370,19 +420,19 @@
         function switchTab(tab) {
             ['dash', 'hist', 'conf'].forEach(t => {
                 document.getElementById(`tab-content-${t}`).classList.add('hidden');
-                document.getElementById(`dk-tab-${t}`).className = "px-4 py-1.5 rounded-md text-sm font-medium transition-all text-slate-400 hover:text-white";
+                document.getElementById(`dk-tab-${t}`).className = "px-4 py-1.5 rounded-md text-sm font-medium transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white";
                 document.getElementById(`mb-tab-${t}`).className = "flex flex-col items-center justify-center w-full h-full text-slate-400 transition-all";
             });
             document.getElementById(`tab-content-${tab}`).classList.remove('hidden');
             document.getElementById(`dk-tab-${tab}`).className = "px-4 py-1.5 rounded-md text-sm font-medium transition-all bg-emerald-600 text-white shadow-sm";
-            document.getElementById(`mb-tab-${tab}`).className = "flex flex-col items-center justify-center w-full h-full text-emerald-400 transition-all";
+            document.getElementById(`mb-tab-${tab}`).className = "flex flex-col items-center justify-center w-full h-full text-emerald-600 dark:text-emerald-400 transition-all";
             if(tab === 'hist') renderHistorico();
         }
 
         function unlockSettings() {
             if(document.getElementById('adm-password-input').value === '1QAZ2WSX') {
                 selectRegime.disabled = false;
-                selectRegime.className = "w-full bg-[#020617] border border-slate-700 text-white rounded-lg py-2.5 px-3 font-medium transition-all outline-none cursor-pointer focus:border-emerald-500 text-sm";
+                selectRegime.className = "w-full bg-white dark:bg-[#020617] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg py-2.5 px-3 font-medium transition-all outline-none cursor-pointer focus:border-emerald-500 text-sm";
                 document.getElementById('adm-lock-zone').classList.add('hidden');
                 document.getElementById('adm-unlocked-badge').classList.remove('hidden');
             } else {
@@ -424,7 +474,7 @@
                 document.getElementById('analysis-card').classList.remove('hidden');
                 document.getElementById('export-card').classList.add('hidden');
                 
-                produtos.forEach((p, idx) => { executeMathForIndex(idx, 5, 12, 50); });
+                produtos.forEach((p, idx) => { executeMathForIndex(idx, 5, 12, 50, false); });
                 renderSidebar();
                 loadProduct(0);
             } else {
@@ -442,19 +492,25 @@
             productList.innerHTML = '';
             produtos.forEach((prod, idx) => {
                 const isSelected = idx === indexAtual;
+                const isUserSaved = resultados[idx] && resultados[idx]._revisado === true;
+                
                 const item = document.createElement('div');
-                item.className = `p-3 flex items-center justify-between cursor-pointer border-l-4 transition-all ${isSelected ? 'bg-slate-900/60 border-emerald-500' : 'border-transparent hover:bg-slate-900/20'}`;
+                item.className = `p-3 flex items-center justify-between cursor-pointer border-l-4 transition-all ${isSelected ? 'bg-slate-100 dark:bg-slate-900/60 border-emerald-500' : 'border-transparent hover:bg-slate-200/50 dark:hover:bg-slate-900/20'}`;
                 item.onclick = () => { loadProduct(idx); };
                 
                 item.innerHTML = `
                     <div class="truncate pr-2 text-left">
-                        <p class="text-xs sm:text-sm font-medium ${isSelected ? 'text-emerald-400 font-bold' : 'text-slate-300'} truncate">${prod.nome}</p>
-                        <span class="text-[11px] text-slate-500 font-mono">NCM: ${prod.ncm}</span>
+                        <p class="text-xs sm:text-sm font-medium ${isSelected ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'} truncate">${prod.nome}</p>
+                        <span class="text-[11px] text-slate-400 dark:text-slate-500 font-mono">NCM: ${prod.ncm}</span>
+                    </div>
+                    <div>
+                        ${isUserSaved ? '<span class="text-[9px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold px-1.5 py-0.5 rounded border border-emerald-500/20">Revisado</span>' : '<span class="text-[9px] bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-500 font-mono px-1.5 py-0.5 rounded">Fila</span>'}
                     </div>
                 `;
                 productList.appendChild(item);
             });
-            document.getElementById('progress-text').innerText = `${resultados.filter(r => r).length}/${produtos.length}`;
+            const totalRevisados = resultados.filter(r => r && r._revisado).length;
+            document.getElementById('progress-text').innerText = `${totalRevisados}/${produtos.length}`;
         }
 
         function loadProduct(idx) {
@@ -480,7 +536,8 @@
             const pctIcmsIn = parseFloat(icmsInInput.value) || 0;
             const margem = parseFloat(marginInput.value) || 0;
 
-            const res = executeMathForIndex(indexAtual, pctFreight, pctIcmsIn, margem);
+            const jaRevisado = resultados[indexAtual] ? resultados[indexAtual]._revisado : false;
+            const res = executeMathForIndex(indexAtual, pctFreight, pctIcmsIn, margem, jaRevisado);
             const currentRegime = selectRegime.value;
 
             ['mei', 'simples', 'presumido', 'real'].forEach(r => {
@@ -510,7 +567,7 @@
             document.getElementById('total-real').innerText = formatBRL(res.pReal);
         }
 
-        function executeMathForIndex(idx, f, i, m) {
+        function executeMathForIndex(idx, f, i, m, revStatus) {
             const prod = produtos[idx];
             const cEff = prod.custo + (prod.custo * (f/100)) + (prod.custo * (i/100));
             const mFactor = m / 100;
@@ -532,7 +589,7 @@
                 "Preco Sugerido Simples (R$)": pSimples.toFixed(2),
                 "Preco Sugerido Presumido (R$)": pPres.toFixed(2),
                 "Preco Sugerido Real (R$)": pReal.toFixed(2),
-                "_frete": f, "_icmsIn": i, "_margem": m,
+                "_frete": f, "_icmsIn": i, "_margem": m, _revisado: revStatus,
                 cEff, pMei, pSimples, pPres, pReal
             };
             return resultados[idx];
@@ -541,6 +598,7 @@
         [marginInput, freightInput, icmsInInput].forEach(inp => inp.addEventListener('input', calculatePrices));
 
         btnNext.addEventListener('click', () => {
+            resultados[indexAtual]._revisado = true;
             if(indexAtual + 1 < produtos.length) {
                 loadProduct(indexAtual + 1);
             } else {
@@ -568,19 +626,19 @@
             const body = document.getElementById('history-table-body');
             let hist = JSON.parse(localStorage.getItem('gf_lote_history_v6') || '[]');
             if(hist.length === 0) {
-                body.innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-slate-500 font-mono text-xs">Nenhum lote processado neste dispositivo.</td></tr>`;
+                body.innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-slate-400 font-mono text-xs">Nenhum lote processado neste dispositivo.</td></tr>`;
                 return;
             }
             body.innerHTML = '';
             hist.forEach((h, index) => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-900/40 transition-colors border-b border-slate-800";
+                tr.className = "hover:bg-slate-100 dark:hover:bg-slate-900/40 transition-colors border-b border-slate-200 dark:border-slate-800";
                 tr.innerHTML = `
-                    <td class="px-4 sm:px-6 py-4 font-mono text-[11px] text-slate-400 whitespace-nowrap">${h.data.split(' ')[0]}</td>
-                    <td class="px-4 sm:px-6 py-4 text-white font-semibold truncate max-w-[120px] sm:max-w-xs">${h.nome}</td>
-                    <td class="px-4 sm:px-6 py-4 text-emerald-400 font-mono text-xs">${h.itens} un</td>
+                    <td class="px-4 sm:px-6 py-4 font-mono text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">${h.data.split(' ')[0]}</td>
+                    <td class="px-4 sm:px-6 py-4 text-slate-900 dark:text-white font-semibold truncate max-w-[120px] sm:max-w-xs">${h.nome}</td>
+                    <td class="px-4 sm:px-6 py-4 text-emerald-600 dark:text-emerald-400 font-mono text-xs">${h.itens} un</td>
                     <td class="px-4 sm:px-6 py-4 text-center">
-                        <button onclick="printLoteHistorico(${index})" class="bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-400 border border-emerald-500/20 text-[11px] font-bold px-2 py-1 rounded transition-all shadow-sm">
+                        <button onclick="printLoteHistorico(${index})" class="bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[11px] font-bold px-2 py-1 rounded transition-all shadow-sm">
                             Imprimir
                         </button>
                     </td>
