@@ -3,2033 +3,641 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GestorFiscal Pro - Gestão Inteligente de NF-e</title>
+    <title>GESTORFISCAL — Sistema de Triagem e Precificação 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        forest: {
-                            50: '#f2f8f5',
-                            100: '#e1efe8',
-                            600: '#15803d',
-                            700: '#166534',
-                            800: '#14532d',
-                            950: '#052e16',
-                        },
-                        navy: {
-                            800: '#1e293b',
-                            900: '#0f172a',
-                            950: '#020617',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            transition: background-color 0.3s, color 0.3s;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-        /* Layout mobile fixado estilo app nativo sem barra do navegador descendo */
-        @media (max-width: 768px) {
-            .app-viewport {
-                height: 100dvh;
-                display: flex;
-                flex-direction: column;
-                overflow: hidden;
-            }
-            .scrollable-content {
-                flex: 1 1 0%;
-                overflow-y: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-        }
-        /* Efeito de Transição 3D e Fade para Abas */
-        .tab-transition-container {
-            perspective: 1500px;
-            position: relative;
-        }
-        .tab-pane {
-            transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease-out;
-            transform-style: preserve-3d;
-            backface-visibility: hidden;
-            width: 100%;
-        }
-        .tab-pane.active {
-            opacity: 1;
-            transform: translate3d(0, 0, 0) rotateY(0);
-            pointer-events: auto;
-            position: relative;
-            z-index: 10;
-        }
-        .tab-pane.inactive-left {
-            opacity: 0;
-            transform: translate3d(-100%, 0, -150px) rotateY(20deg);
-            pointer-events: none;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 1;
-            height: 0;
-            overflow: hidden;
-        }
-        .tab-pane.inactive-right {
-            opacity: 0;
-            transform: translate3d(100%, 0, -150px) rotateY(-20deg);
-            pointer-events: none;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 1;
-            height: 0;
-            overflow: hidden;
-        }
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #10b981;
-            border-radius: 4px;
-        }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(12px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in-up {
-            animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         
-        /* Ajuste Fino das Tooltips */
-        .tooltip-trigger { position: relative; }
-        .tooltip-content {
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(8px);
-            transition: opacity 0.25s ease-in-out, transform 0.25s ease-in-out, visibility 0.25s;
-            position: absolute;
-            left: 50%;
-            bottom: 105%;
-            transform: translateX(-50%) translateY(8px);
-            width: 260px;
-            z-index: 50;
-            pointer-events: none;
-        }
-        .tooltip-trigger:hover .tooltip-content {
-            opacity: 1;
-            visibility: visible;
-            transform: translateX(-50%) translateY(0);
+        /* ESTILO CORPORATIVO EXCLUSIVO PARA EMISSÃO DE PDF / IMPRESSÃO */
+        @media print {
+            html, body { background: white !important; color: black !important; height: auto !important; min-height: 0 !important; }
+            body { padding: 0 !important; margin: 0 !important; display: block !important; }
+            main { display: block !important; padding: 0 !important; margin: 0 !important; height: auto !important; min-height: 0 !important; }
+            header, nav, #upload-zone, #product-list-container, #actions-triage-zone, #export-card, .no-print, #bottom-mobile-nav { 
+                display: none !important; 
+            }
+            #dashboard { display: block !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+            .lg\:col-span-8 { width: 100% !important; }
+            #analysis-card { background: white !important; border: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
+            .print-header { 
+                display: block !important; 
+                border-bottom: 2px solid #000000 !important; 
+                padding-bottom: 16px !important; 
+                margin-bottom: 24px !important;
+            }
+            .print-visible-report { 
+                display: table !important; 
+                width: 100% !important; 
+                border-collapse: collapse !important; 
+                margin-top: 16px !important; 
+                page-break-inside: auto !important;
+            }
+            .print-visible-report tr { page-break-inside: avoid !important; page-break-after: auto !important; }
+            .print-visible-report th, .print-visible-report td { 
+                border: 1px solid #000000 !important; 
+                padding: 8px 10px !important; 
+                text-align: left !important; 
+                color: black !important; 
+                font-size: 11px !important; 
+            }
+            .print-visible-report th { 
+                background-color: #f8fafc !important; 
+                font-weight: 700 !important; 
+                text-transform: uppercase !important; 
+                font-size: 10px !important; 
+                letter-spacing: 0.05em !important;
+            }
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 dark:bg-navy-950 dark:text-slate-100 min-h-screen flex flex-col overflow-x-hidden app-viewport">
+<body class="bg-[#020617] text-slate-100 min-h-screen flex flex-col pb-20 md:pb-0">
 
-    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2"></div>
-
-    <div id="login-screen" class="fixed inset-0 z-45 flex items-center justify-center bg-slate-100 dark:bg-navy-950 px-4 transition-all duration-500">
-        <div class="bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 max-w-sm w-full shadow-2xl relative overflow-hidden animate-fade-in-up">
-            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-500 via-teal-600 to-blue-600"></div>
+    <header class="bg-[#0b1329] border-b border-slate-800 sticky top-0 z-50 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-md">G</div>
+                <span class="text-lg font-black tracking-wider text-white">GESTORFISCAL</span>
+            </div>
             
-            <div class="flex flex-col items-center mb-6">
-                <div class="w-14 h-14 bg-emerald-100 dark:bg-emerald-950/50 rounded-2xl flex items-center justify-center mb-3 border border-emerald-200 dark:border-emerald-800 shadow-md">
-                    <i data-lucide="calculator" class="w-8 h-8 text-emerald-600 dark:text-emerald-400"></i>
+            <nav class="hidden md:flex space-x-1 bg-slate-900 p-1 rounded-lg border border-slate-800">
+                <button id="dk-tab-dash" onclick="switchTab('dash')" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all bg-emerald-600 text-white shadow-sm">
+                    Calculadora
+                </button>
+                <button id="dk-tab-hist" onclick="switchTab('hist')" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all text-slate-400 hover:text-white">
+                    Histórico
+                </button>
+                <button id="dk-tab-conf" onclick="switchTab('conf')" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all text-slate-400 hover:text-white">
+                    Configurações
+                </button>
+            </nav>
+
+            <div>
+                <span id="active-regime-badge" class="text-xs bg-amber-500/10 text-amber-400 px-2.5 py-1 rounded-full font-semibold border border-amber-500/20">Modo Demo / Comparativo</span>
+            </div>
+        </div>
+    </header>
+
+    <div id="bottom-mobile-nav" class="md:hidden fixed bottom-0 left-0 right-0 bg-[#0b1329] border-t border-slate-800 flex justify-around items-center h-16 z-50 no-print px-2">
+        <button id="mb-tab-dash" onclick="switchTab('dash')" class="flex flex-col items-center justify-center w-full h-full text-emerald-400 transition-all">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="text-[10px] font-medium mt-1">Calculadora</span>
+        </button>
+        <button id="mb-tab-hist" onclick="switchTab('hist')" class="flex flex-col items-center justify-center w-full h-full text-slate-400 transition-all">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span class="text-[10px] font-medium mt-1">Histórico</span>
+        </button>
+        <button id="mb-tab-conf" onclick="switchTab('conf')" class="flex flex-col items-center justify-center w-full h-full text-slate-400 transition-all">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <span class="text-[10px] font-medium mt-1">Ajustes</span>
+        </button>
+    </div>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 flex flex-col justify-center">
+        
+        <div class="hidden print-header text-black">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                <div>
+                    <h1 style="font-size: 20px; font-weight: 800; margin: 0; text-transform: uppercase; letter-spacing: -0.02em;">GESTORFISCAL</h1>
+                    <p style="font-size: 12px; color: #475569; margin: 4px 0 0 0;">Relatório Consolidado de Margens e Precificação</p>
                 </div>
-                <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">GestorFiscal <span class="text-emerald-600">Pro</span></h1>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Sua contabilidade automatizada e inteligente</p>
+                <div style="text-align: right; font-size: 11px; color: #475569;">
+                    <p style="margin: 0;"><strong>Vigência Fiscal:</strong> 2026</p>
+                    <p style="margin: 2px 0 0 0;" id="print-meta-date">Emissão: -</p>
+                </div>
+            </div>
+            <div style="margin-top: 16px; padding-top: 12px; border-top: 1px dashed #cbd5e1; font-size: 11px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div><strong style="text-transform: uppercase;">Regime de Tributação Aplicado:</strong> <span id="print-meta-regime">-</span></div>
+                <div><strong style="text-transform: uppercase;">Arquivo de Origem (XML):</strong> <span id="print-meta-file">-</span></div>
+            </div>
+        </div>
+
+        <table id="lote-print-table" class="hidden print-visible-report text-black">
+            <thead>
+                <tr>
+                    <th>Item / Descrição do Produto</th>
+                    <th>NCM</th>
+                    <th>Custo Fábrica</th>
+                    <th>Custo Efetivo</th>
+                    <th>Margem</th>
+                    <th>Preço de Venda Final</th>
+                    <th style="width: 140px; border-left: 2px dashed #000000;">Ajuste do Patrão</th>
+                </tr>
+            </thead>
+            <tbody id="lote-print-table-body"></tbody>
+        </table>
+
+        <div id="tab-content-dash" class="space-y-6 flex-1 flex flex-col justify-center">
+            
+            <div id="upload-zone" class="bg-[#0b1329] border-2 border-dashed border-slate-700 rounded-xl p-8 sm:p-12 text-center max-w-2xl w-full mx-auto shadow-xl transition hover:border-emerald-500 group cursor-pointer no-print">
+                <input type="file" id="xml-input" accept=".xml" class="hidden" />
+                <label for="xml-input" class="cursor-pointer block">
+                    <svg class="mx-auto h-12 w-12 text-slate-500 group-hover:text-emerald-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <h3 class="mt-4 text-lg font-semibold text-white">Importar XML de NF-e</h3>
+                    <p class="mt-2 text-sm text-slate-400">Clique ou arraste o arquivo fiscal da nota para iniciar a triagem</p>
+                </label>
             </div>
 
-            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Usuário ou E-mail</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 pointer-events-none">
-                            <i data-lucide="user" class="w-4 h-4"></i>
-                        </span>
-                        <input type="text" id="login-email" required class="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm transition-all" placeholder="Digite seu usuário ou e-mail">
+            <div id="dashboard" class="hidden flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start text-left">
+                
+                <div id="product-list-container" class="lg:col-span-4 bg-[#0b1329] border border-slate-800 rounded-xl shadow-xl overflow-hidden flex flex-col h-[160px] lg:h-[calc(100vh-14rem)] no-print">
+                    <div class="p-3 border-b border-slate-800 bg-slate-900/40 flex justify-between items-center">
+                        <h3 class="font-semibold text-white text-xs sm:text-sm">Fila de Itens (Seleção Livre)</h3>
+                        <span class="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono" id="progress-text">0/0</span>
                     </div>
+                    <div id="product-list" class="divide-y divide-slate-800 overflow-y-auto flex-1"></div>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Senha</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 pointer-events-none">
-                            <i data-lucide="lock" class="w-4 h-4"></i>
-                        </span>
-                        <input type="password" id="login-password" required class="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm transition-all" placeholder="Sua senha">
+                <div class="lg:col-span-8 flex flex-col space-y-6">
+                    <div id="analysis-card" class="bg-[#0b1329] border border-slate-800 rounded-xl p-4 sm:p-6 shadow-xl space-y-6">
                         
-                        <button type="button" onclick="togglePasswordVisibility()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-emerald-500 focus:outline-none">
-                            <i id="toggle-password-icon" data-lucide="eye" class="w-4 h-4"></i>
-                        </button>
+                        <div class="flex flex-col sm:flex-row justify-between sm:items-start border-b border-slate-800 pb-3 space-y-2 sm:space-y-0">
+                            <div>
+                                <span class="text-[10px] sm:text-xs font-semibold text-emerald-400 tracking-wider uppercase font-mono" id="view-ncm">NCM: -</span>
+                                <h2 class="text-base sm:text-xl font-bold text-white mt-0.5" id="view-title">-</h2>
+                            </div>
+                            <div class="text-left sm:text-right">
+                                <span class="text-[10px] sm:text-xs text-slate-400 block">Custo de Fábrica ($C_U$)</span>
+                                <span class="text-lg sm:text-xl font-bold text-emerald-400 font-mono" id="view-cost">R$ 0,00</span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-900/50 p-3 sm:p-4 rounded-xl border border-slate-800 no-print">
+                            <div>
+                                <label class="block text-[10px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Frete / Agregados (%)</label>
+                                <input type="number" id="input-freight" value="5" class="w-full bg-[#020617] border border-slate-700 rounded-lg py-2 px-3 text-white font-mono text-base focus:outline-none focus:border-emerald-500">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">ICMS Entrada (%)</label>
+                                <input type="number" id="input-icms-in" value="12" class="w-full bg-[#020617] border border-slate-700 rounded-lg py-2 px-3 text-white font-mono text-base focus:outline-none focus:border-emerald-500">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Margem Lucro (%)</label>
+                                <input type="number" id="margin-input" value="50" class="w-full bg-[#020617] border border-slate-700 rounded-lg py-2 px-3 text-emerald-400 font-mono text-base font-bold focus:outline-none focus:border-emerald-500">
+                            </div>
+                        </div>
+
+                        <div id="regimes-container" class="grid grid-cols-1 gap-4">
+                            <div id="card-mei" class="bg-[#111c44]/40 border border-slate-800 rounded-xl p-4 transition-all">
+                                <div class="flex justify-between items-center border-b border-slate-800/60 pb-1.5 mb-1.5">
+                                    <h4 class="font-bold text-slate-200 text-xs sm:text-sm">MEI</h4>
+                                    <span class="text-[9px] font-mono text-slate-500">DAS Fixo Mensal</span>
+                                </div>
+                                <div class="text-xs space-y-1 text-slate-400 font-mono">
+                                    <div class="flex justify-between"><span>Custo Efetivo ($C_{eff}$):</span><span id="calc-mei-ceff">R$ 0,00</span></div>
+                                    <div class="flex justify-between font-bold border-t border-slate-800/80 pt-1 text-emerald-400"><span>Preço Sugerido:</span><span id="total-mei">R$ 0,00</span></div>
+                                </div>
+                            </div>
+
+                            <div id="card-simples" class="bg-[#111c44]/40 border border-slate-800 rounded-xl p-4 transition-all">
+                                <div class="flex justify-between items-center border-b border-slate-800/60 pb-1.5 mb-1.5">
+                                    <h4 class="font-bold text-slate-200 text-xs sm:text-sm">Simples Nacional</h4>
+                                    <span class="text-[9px] font-mono text-emerald-500">Alíquota Base Comércio</span>
+                                </div>
+                                <div class="text-xs space-y-1 text-slate-400 font-mono">
+                                    <div class="flex justify-between"><span>Custo Efetivo ($C_{eff}$):</span><span id="calc-simples-ceff">R$ 0,00</span></div>
+                                    <div class="flex justify-between"><span>Imposto DAS Saída (4,00%):</span><span class="text-red-400" id="calc-simples-das">R$ 0,00</span></div>
+                                    <div class="flex justify-between font-bold border-t border-slate-800/80 pt-1 text-emerald-400"><span>Preço Sugerido:</span><span id="total-simples">R$ 0,00</span></div>
+                                </div>
+                            </div>
+
+                            <div id="card-presumido" class="bg-[#111c44]/40 border border-slate-800 rounded-xl p-4 transition-all">
+                                <div class="flex justify-between items-center border-b border-slate-800/60 pb-1.5 mb-1.5">
+                                    <h4 class="font-bold text-slate-200 text-xs sm:text-sm">Lucro Presumido</h4>
+                                    <span class="text-[9px] font-mono text-indigo-500">Alíquota Combinada</span>
+                                </div>
+                                <div class="text-xs space-y-1 text-slate-400 font-mono">
+                                    <div class="flex justify-between"><span>Custo Efetivo ($C_{eff}$):</span><span id="calc-pres-ceff">R$ 0,00</span></div>
+                                    <div class="flex justify-between"><span>Impostos Totais (22,93%):</span><span class="text-red-400" id="calc-pres-taxes">R$ 0,00</span></div>
+                                    <div class="flex justify-between font-bold border-t border-slate-800/80 pt-1 text-emerald-400"><span>Preço Sugerido:</span><span id="total-presumido">R$ 0,00</span></div>
+                                </div>
+                            </div>
+
+                            <div id="card-real" class="bg-[#111c44]/40 border border-slate-800 rounded-xl p-4 transition-all">
+                                <div class="flex justify-between items-center border-b border-slate-800/60 pb-1.5 mb-1.5">
+                                    <h4 class="font-bold text-slate-200 text-xs sm:text-sm">Lucro Real</h4>
+                                    <span class="text-[9px] font-mono text-orange-500">Regime Geral</span>
+                                </div>
+                                <div class="text-xs space-y-1 text-slate-400 font-mono">
+                                    <div class="flex justify-between"><span>Custo Efetivo ($C_{eff}$):</span><span id="calc-real-ceff">R$ 0,00</span></div>
+                                    <div class="flex justify-between"><span>Impostos Totais (34,94%):</span><span class="text-red-400" id="calc-real-taxes">R$ 0,00</span></div>
+                                    <div class="flex justify-between font-bold border-t border-slate-800/80 pt-1 text-emerald-400"><span>Preço Sugerido:</span><span id="total-real">R$ 0,00</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="actions-triage-zone" class="flex flex-col sm:flex-row justify-between items-center pt-4 border-t border-slate-800 no-print gap-3 sm:gap-0">
+                            <button onclick="printLoteCompletoAtual()" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs sm:text-sm px-4 py-2.5 rounded-lg transition-all text-center">
+                                Imprimir Lote XML Completo
+                            </button>
+                            <button id="btn-next" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs sm:text-sm px-5 py-3 rounded-lg shadow-md transition-all flex items-center justify-center space-x-1.5">
+                                <span>Salvar Item Atual</span>
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="export-card" class="hidden bg-[#0b1329] border border-slate-800 rounded-xl p-6 sm:p-8 text-center shadow-2xl max-w-xl mx-auto w-full space-y-4 no-print">
+                        <div class="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-2 border border-emerald-500/20">
+                            <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                        </div>
+                        <h2 class="text-xl font-bold text-white">Lote de NF-e Finalizado!</h2>
+                        <p class="text-slate-400 text-sm">Todos os produtos da fila foram parametrizados e processados localmente.</p>
+                        
+                        <div class="pt-2 space-y-3">
+                            <button id="btn-export" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-lg transition-all shadow-md">
+                                Exportar Planilha Modificada (CSV)
+                            </button>
+                            <button onclick="resetFlow()" class="w-full bg-slate-900 hover:bg-slate-800 text-slate-300 font-semibold py-2.5 px-6 rounded-lg transition-all border border-slate-800">
+                                Processar Outro Arquivo XML
+                            </button>
+                        </div>
                     </div>
                 </div>
-
-                <div class="flex items-center justify-between pt-1">
-                    <label class="flex items-center space-x-2 cursor-pointer select-none">
-                        <input type="checkbox" id="login-remember" class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-navy-950" checked>
-                        <span class="text-xs text-slate-600 dark:text-slate-400">Manter conectado</span>
-                    </label>
-                    <span class="text-xs text-slate-400">v1.6.0</span>
-                </div>
-
-                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2">
-                    <span>Acessar Aplicativo</span>
-                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
-                </button>
-            </form>
+            </div>
         </div>
-    </div>
 
-    <div id="license-lock-screen" class="fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-md hidden flex-col items-center justify-center px-4 animate-fade-in-up">
-        <div class="bg-white dark:bg-navy-900 border border-red-500/30 rounded-3xl p-8 max-w-md w-full shadow-2xl text-center relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-2 bg-red-600"></div>
-            <div class="w-16 h-16 bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i data-lucide="shield-alert" class="w-8 h-8"></i>
-            </div>
-            <h2 class="text-xl font-extrabold text-slate-900 dark:text-white mb-2">Licença Bloqueada</h2>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
-                Este dispositivo ou conta corporativa não possui um Token ou licença ativa vinculada no Google Sheets, ou o acesso foi inativado.
-            </p>
-            <div class="bg-slate-50 dark:bg-navy-950 p-4 rounded-xl text-left border border-slate-200/50 dark:border-slate-800 text-[11px] mb-6">
-                <span class="font-bold text-slate-700 dark:text-slate-300 block mb-1">CNPJ do Assinante:</span>
-                <span id="locked-cnpj" class="font-mono text-slate-500 block mb-3">--.---.---/----.--</span>
-                <span class="font-bold text-slate-700 dark:text-slate-300 block mb-1">Status:</span>
-                <span class="text-red-500 font-bold">Chave de Licença Revogada</span>
-            </div>
-            <button onclick="handleLogout()" class="w-full bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold py-3 px-4 rounded-xl transition-all">
-                Voltar ao Login
-            </button>
-        </div>
-    </div>
-
-    <div id="admin-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center px-4">
-        <div class="bg-white dark:bg-navy-900 rounded-3xl max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col shadow-2xl border border-slate-200 dark:border-slate-800 animate-fade-in-up">
-            <div class="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-gradient-to-r from-emerald-800 to-navy-900 text-white">
-                <div class="flex items-center gap-3">
-                    <i data-lucide="shield-check" class="w-7 h-7 text-emerald-400"></i>
-                    <div>
-                        <h2 class="text-xl font-bold">Painel de Administração do Sistema</h2>
-                        <p class="text-xs text-emerald-200/80">Controle de Planilhas, Acessos e APIs de Clientes</p>
-                    </div>
-                </div>
-                <button onclick="toggleAdminModal(false)" class="p-2 hover:bg-white/10 rounded-full transition-colors">
-                    <i data-lucide="x" class="w-6 h-6"></i>
-                </button>
-            </div>
-
-            <div class="p-6 overflow-y-auto flex-1 space-y-6">
-                <div class="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 text-xs text-yellow-800 dark:text-yellow-300">
-                    <p class="font-bold flex items-center gap-1 mb-1">
-                        <i data-lucide="info" class="w-4 h-4"></i> Segurança Integrada por Banco de Dados (Planilha)
-                    </p>
-                    O sistema valida os logins contra esta tabela em tempo real. Se o regime tributário de um usuário for alterado na coluna <strong>"Plano" (MEI ou Nacional)</strong>, todas as regras de impostos dele mudarão instantaneamente.
-                </div>
-
-                <div class="flex justify-between items-center">
-                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500">Tabela de Usuários Autorizados</h3>
-                    <button onclick="addUserRow()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold py-2 px-3 rounded-lg flex items-center gap-1.5 transition-colors">
-                        <i data-lucide="plus" class="w-4 h-4"></i> Adicionar Usuário
-                    </button>
-                </div>
-
-                <div class="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
-                    <table class="w-full text-left border-collapse text-xs">
-                        <thead>
-                            <tr class="bg-slate-50 dark:bg-navy-950 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
-                                <th class="p-3 font-semibold">Razão Social / Nome</th>
-                                <th class="p-3 font-semibold">CNPJ</th>
-                                <th class="p-3 font-semibold">E-mail</th>
-                                <th class="p-3 font-semibold">Senha</th>
-                                <th class="p-3 font-semibold">Cód. Cliente (Licença)</th>
-                                <th class="p-3 font-semibold">Plano</th>
-                                <th class="p-3 font-semibold text-center">Ações</th>
+        <div id="tab-content-hist" class="hidden space-y-6 no-print">
+            <div class="bg-[#0b1329] border border-slate-800 rounded-xl p-4 sm:p-6 shadow-xl text-left">
+                <h2 class="text-lg font-bold text-white mb-1">Histórico Local de Processamentos</h2>
+                <p class="text-xs text-slate-400 mb-6">Notas auditadas neste dispositivo. Imprima o PDF do lote baseado no regime oficial.</p>
+                <div class="overflow-x-auto -mx-4 sm:mx-0">
+                    <table class="w-full text-sm text-left text-slate-300 min-w-[500px]">
+                        <thead class="text-xs uppercase bg-slate-900 text-slate-500 tracking-wider">
+                            <tr>
+                                <th class="px-4 sm:px-6 py-3 font-semibold">Data/Hora</th>
+                                <th class="px-4 sm:px-6 py-3 font-semibold">Nome da Nota XML</th>
+                                <th class="px-4 sm:px-6 py-3 font-semibold">Itens</th>
+                                <th class="px-4 sm:px-6 py-3 font-semibold text-center">Ações</th>
                             </tr>
                         </thead>
-                        <tbody id="user-rows">
-                            </tbody>
+                        <tbody id="history-table-body" class="divide-y divide-slate-800"></tbody>
                     </table>
                 </div>
             </div>
-
-            <div class="p-4 bg-slate-50 dark:bg-navy-950 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center">
-                <span class="text-xs text-slate-400">Dados salvos localmente no seu dispositivo corporativo.</span>
-                <button onclick="saveAdminData()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-5 rounded-xl transition-all">
-                    Salvar Alterações
-                </button>
-            </div>
         </div>
-    </div>
 
-    <div id="app-shell" class="hidden flex-1 flex-col font-sans mb-16 md:mb-0">
-        <header class="bg-white dark:bg-navy-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 transition-colors shadow-sm">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-emerald-500 text-white rounded-xl flex items-center justify-center shadow-md cursor-pointer" onclick="switchTab('dashboard')">
-                        <i data-lucide="wallet" class="w-5 h-5"></i>
-                    </div>
-                    <div class="cursor-pointer" onclick="switchTab('dashboard')">
-                        <span class="text-lg font-bold tracking-tight block">GestorFiscal <span class="text-emerald-600 dark:text-emerald-400">Pro</span></span>
-                        <div class="flex items-center gap-1.5">
-                            <span id="user-badge" class="text-[10px] bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 font-bold px-1.5 py-0.5 rounded uppercase">MEI</span>
-                            <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                            <span class="text-[10px] text-slate-400">Conectado</span>
-                        </div>
-                    </div>
+        <div id="tab-content-conf" class="hidden space-y-6 max-w-2xl w-full mx-auto text-left no-print">
+            <div class="bg-[#0b1329] border border-slate-800 rounded-xl p-4 sm:p-6 shadow-xl space-y-6">
+                <div>
+                    <h2 class="text-lg font-bold text-white mb-1">Configurações Gerais do Core</h2>
+                    <p class="text-xs text-slate-400">Fixar o regime oficial do cliente para moldar as saídas de relatórios do patrão.</p>
                 </div>
 
-                <nav class="hidden md:flex bg-slate-100 dark:bg-navy-950 p-1 rounded-xl border border-slate-200/50 dark:border-slate-800/50">
-                    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all">
-                        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
-                    </button>
-                    <button onclick="switchTab('xml-editor')" id="nav-xml-editor" class="nav-btn flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all">
-                        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Processar XML
-                    </button>
-                    <button onclick="switchTab('reports')" id="nav-reports" class="nav-btn flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all">
-                        <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Relatórios
-                    </button>
-                    <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn hidden flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all">
-                        <i data-lucide="settings-2" class="w-4 h-4"></i> Configurações ADM
-                    </button>
-                </nav>
-
-                <div class="flex items-center gap-3">
-                    <button onclick="toggleDarkMode()" class="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-navy-800 rounded-xl transition-all" title="Alternar tema">
-                        <i data-lucide="sun" class="w-5 h-5 dark:hidden"></i>
-                        <i data-lucide="moon" class="w-5 h-5 hidden dark:block"></i>
-                    </button>
-
-                    <div class="relative">
-                        <button id="profile-trigger-btn" onclick="toggleProfileDropdown()" class="flex items-center gap-2 focus:outline-none p-1 rounded-full hover:bg-slate-100 dark:hover:bg-navy-800 transition-all">
-                            <img id="header-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop" class="w-8 h-8 rounded-full object-cover border-2 border-emerald-500" alt="Avatar">
-                            <span id="header-username" class="hidden sm:inline text-sm font-bold pr-1 text-slate-700 dark:text-slate-200">Usuário</span>
-                            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
-                        </button>
-
-                        <div id="profile-dropdown" class="absolute right-0 mt-3 w-72 bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl py-3 hidden animate-fade-in-up z-50 overflow-hidden">
-                            <div class="p-5 border-b border-slate-100 dark:border-slate-800 text-center relative">
-                                <div class="relative w-20 h-20 mx-auto mb-3 group cursor-pointer" onclick="triggerAvatarUpload()">
-                                    <img id="dropdown-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop" class="w-20 h-20 rounded-full object-cover border-2 border-emerald-500 transition-all group-hover:opacity-75 shadow-md">
-                                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 text-white bg-black/60 rounded-full text-xs font-semibold transition-all">Upload</div>
-                                    <input type="file" id="avatar-file-input" accept="image/*" class="hidden" onchange="handleAvatarUpload(event)">
-                                </div>
-                                <h4 id="dropdown-username" class="font-extrabold text-slate-900 dark:text-white text-base">Usuário Ativo</h4>
-                                <p id="dropdown-email" class="text-xs text-slate-400 font-medium">user@corporativo.com</p>
-                                
-                                <div class="mt-3 flex justify-center gap-1.5">
-                                    <span id="profile-regime-badge" class="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Regime: MEI</span>
-                                </div>
-                            </div>
-                            <div class="px-2 py-2 space-y-1">
-                                <button onclick="openTabAndCloseDropdown('dashboard')" class="flex w-full items-center gap-3 px-4 py-2.5 text-xs font-bold hover:bg-slate-50 dark:hover:bg-navy-800 rounded-2xl text-slate-700 dark:text-slate-300">
-                                    <i data-lucide="layout-dashboard" class="w-4 h-4 text-slate-400"></i> Meu Dashboard
-                                </button>
-                                <button onclick="openProfileNameEdit()" class="flex w-full items-center gap-3 px-4 py-2.5 text-xs font-bold hover:bg-slate-50 dark:hover:bg-navy-800 rounded-2xl text-slate-700 dark:text-slate-300">
-                                    <i data-lucide="user-cog" class="w-4 h-4 text-slate-400"></i> Editar Nome de Exibição
-                                </button>
-                                <hr class="border-slate-100 dark:border-slate-800 my-1">
-                                <button onclick="handleLogout()" class="flex w-full items-center gap-3 px-4 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-2xl">
-                                    <i data-lucide="log-out" class="w-4 h-4"></i> Sair com Segurança
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <nav class="md:hidden fixed bottom-4 left-4 right-4 bg-white/90 dark:bg-navy-900/90 backdrop-blur-md border border-slate-200/50 dark:border-slate-850 p-2.5 flex justify-around z-30 shadow-2xl rounded-3xl">
-            <button onclick="switchTab('dashboard')" id="mob-nav-dashboard" class="flex flex-col items-center p-2 text-xs font-bold text-slate-400 dark:text-slate-500 hover:text-emerald-500 transition-all scale-100 active:scale-95">
-                <i data-lucide="layout-dashboard" class="w-5 h-5 mb-0.5"></i>
-                Dashboard
-            </button>
-            <button onclick="switchTab('xml-editor')" id="mob-nav-xml-editor" class="flex flex-col items-center p-2 text-xs font-bold text-slate-400 dark:text-slate-500 hover:text-emerald-500 transition-all scale-100 active:scale-95">
-                <i data-lucide="file-spreadsheet" class="w-5 h-5 mb-0.5"></i>
-                XML
-            </button>
-            <button onclick="switchTab('reports')" id="mob-nav-reports" class="flex flex-col items-center p-2 text-xs font-bold text-slate-400 dark:text-slate-500 hover:text-emerald-500 transition-all scale-100 active:scale-95">
-                <i data-lucide="bar-chart-3" class="w-5 h-5 mb-0.5"></i>
-                Relatórios
-            </button>
-            <button id="mobile-nav-settings" onclick="switchTab('settings')" class="hidden flex flex-col items-center p-2 text-xs font-bold text-slate-400 dark:text-slate-500 hover:text-emerald-500 transition-all scale-100 active:scale-95">
-                <i data-lucide="settings-2" class="w-5 h-5 mb-0.5"></i>
-                Config ADM
-            </button>
-        </nav>
-
-        <main id="tab-container" class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 scrollable-content tab-transition-container">
-            
-            <section id="tab-dashboard" class="tab-pane active space-y-6">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="bg-gradient-to-r from-emerald-800 via-emerald-950 to-navy-900 rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden shadow-lg lg:col-span-2">
-                        <div class="absolute inset-0 opacity-10">
-                            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-                                <defs>
-                                    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                                        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" stroke-width="1"/>
-                                    </pattern>
-                                </defs>
-                                <rect width="100%" height="100%" fill="url(#grid)" />
-                            </svg>
-                        </div>
-                        <div class="relative z-10 flex flex-col justify-between h-full min-h-[160px]">
-                            <div>
-                                <span id="regime-warning-badge" class="text-[10px] uppercase tracking-widest font-extrabold text-emerald-400 bg-emerald-950/80 px-2 py-1 rounded">Regime Ativo: MEI (Isenção DAS)</span>
-                                <h2 class="text-2xl sm:text-3xl font-extrabold mt-2">Olá, <span id="welcome-username">Usuário</span>!</h2>
-                                <p id="regime-description-text" class="text-xs sm:text-sm text-slate-300 mt-2 max-w-xl">Sua empresa está configurada no regime MEI. O limite de faturamento anual recomendado é de R$ 81k. Os impostos sob as vendas simuladas são zerados.</p>
-                            </div>
-                            <div class="flex items-center gap-3 mt-4">
-                                <button onclick="switchTab('xml-editor')" class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold py-2.5 px-5 rounded-2xl shadow-md transition-all">
-                                    Processar Novo XML
-                                </button>
-                                <button onclick="openExplicationModal()" class="bg-white/10 hover:bg-white/20 text-white text-xs font-bold py-2.5 px-4 rounded-2xl transition-all flex items-center gap-1.5">
-                                    <i data-lucide="info" class="w-4 h-4"></i> Entenda o Cálculo
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 flex flex-col justify-between shadow-sm relative overflow-hidden group tooltip-trigger">
-                        <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-emerald-500/5 dark:bg-emerald-500/10 rounded-full"></div>
-                        
-                        <div class="tooltip-content bg-slate-900/95 dark:bg-slate-800/95 text-white p-4 rounded-2xl border border-slate-700/50 shadow-xl text-xs">
-                            <h4 class="font-extrabold text-emerald-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-                                <i data-lucide="clock" class="w-3.5 h-3.5"></i> Calendário Dinâmico
-                            </h4>
-                            <p class="leading-relaxed text-slate-200">Sincronizado diretamente através de sua conexão de internet. Identifica o fuso horário exato do seu navegador.</p>
-                        </div>
-
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <span class="text-xs uppercase text-slate-400 font-extrabold block">Fuso Horário Local</span>
-                                <span id="widget-timezone" class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Buscando...</span>
-                            </div>
-                            <div class="p-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl">
-                                <i data-lucide="clock" class="w-5 h-5"></i>
-                            </div>
-                        </div>
-                        <div class="my-4">
-                            <span id="widget-time" class="text-4xl font-black tracking-tight block">00:00:00</span>
-                            <span id="widget-date" class="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1 block">---</span>
-                        </div>
-                        <div class="text-[10px] text-slate-400 flex items-center gap-1">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-                            <span>Sincronizado via Internet (Passe o mouse)</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div class="bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all relative group tooltip-trigger">
-                        <div class="tooltip-content bg-slate-900/95 dark:bg-slate-800/95 text-white p-4 rounded-2xl border border-slate-700/50 shadow-xl text-xs">
-                            <h4 class="font-extrabold text-emerald-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-                                <i data-lucide="trending-up" class="w-3.5 h-3.5"></i> Faturamento Bruto
-                            </h4>
-                            <p class="leading-relaxed text-slate-200">Valor bruto de vendas estimado caso você comercialize todos os itens extraídos do XML com o lucro recomendado.</p>
-                        </div>
-                        <div class="flex justify-between items-start">
-                            <div class="p-3 bg-emerald-100 dark:bg-emerald-950/50 rounded-xl">
-                                <i data-lucide="trending-up" class="w-6 h-6 text-emerald-600 dark:text-emerald-400"></i>
-                            </div>
-                            <span class="text-xs font-bold text-green-500 bg-green-500/10 px-2 py-1 rounded">+12.5%</span>
-                        </div>
-                        <h3 class="text-slate-400 text-xs font-semibold uppercase tracking-wider mt-4">Faturamento Bruto</h3>
-                        <p id="metric-revenue" class="text-2xl font-black text-slate-800 dark:text-white mt-1">R$ 145.230,00</p>
-                    </div>
-
-                    <div class="bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all relative group tooltip-trigger">
-                        <div class="tooltip-content bg-slate-900/95 dark:bg-slate-800/95 text-white p-4 rounded-2xl border border-slate-700/50 shadow-xl text-xs">
-                            <h4 class="font-extrabold text-blue-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-                                <i data-lucide="file-check-2" class="w-3.5 h-3.5"></i> NFe Processadas
-                            </h4>
-                            <p class="leading-relaxed text-slate-200">Total de Notas Fiscais eletrônicas enviadas para armazenamento nas pastas de controle contábil.</p>
-                        </div>
-                        <div class="flex justify-between items-start">
-                            <div class="p-3 bg-blue-100 dark:bg-blue-950/50 rounded-xl">
-                                <i data-lucide="file-check-2" class="w-6 h-6 text-blue-600 dark:text-blue-400"></i>
-                            </div>
-                            <span class="text-xs font-bold text-blue-500 bg-blue-500/10 px-2 py-1 rounded">Este mês</span>
-                        </div>
-                        <h3 class="text-slate-400 text-xs font-semibold uppercase tracking-wider mt-4">XMLs Processados</h3>
-                        <p id="metric-xml-count" class="text-2xl font-black text-slate-800 dark:text-white mt-1">0</p>
-                    </div>
-
-                    <div class="bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all relative group tooltip-trigger">
-                        <div class="tooltip-content bg-slate-900/95 dark:bg-slate-800/95 text-white p-4 rounded-2xl border border-slate-700/50 shadow-xl text-xs">
-                            <h4 class="font-extrabold text-amber-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-                                <i data-lucide="percent" class="w-3.5 h-3.5"></i> Markup Médio
-                            </h4>
-                            <p class="leading-relaxed text-slate-200">A média de lucro configurada sob o valor de compra. Considera Custo da Nota + Frete + ICMS + Margem aplicada.</p>
-                        </div>
-                        <div class="flex justify-between items-start">
-                            <div class="p-3 bg-amber-100 dark:bg-amber-950/50 rounded-xl">
-                                <i data-lucide="percent" class="w-6 h-6 text-amber-600 dark:text-amber-400"></i>
-                            </div>
-                            <span class="text-xs font-bold text-amber-500 bg-amber-500/10 px-2 py-1 rounded">Meta: 35%</span>
-                        </div>
-                        <h3 class="text-slate-400 text-xs font-semibold uppercase tracking-wider mt-4">Margem Média Geral</h3>
-                        <p id="metric-avg-margin" class="text-2xl font-black text-slate-800 dark:text-white mt-1">0.0%</p>
-                    </div>
-
-                    <div class="bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all relative group tooltip-trigger">
-                        <div class="tooltip-content bg-slate-900/95 dark:bg-slate-800/95 text-white p-4 rounded-2xl border border-slate-700/50 shadow-xl text-xs">
-                            <h4 class="font-extrabold text-red-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-                                <i data-lucide="receipt" class="w-3.5 h-3.5"></i> Alíquotas e Imposto
-                            </h4>
-                            <p class="leading-relaxed text-slate-200">No regime MEI o imposto sobre vendas simuladas é isento. No Simples Nacional ele computa 4% (comércio - Anexo I).</p>
-                        </div>
-                        <div class="flex justify-between items-start">
-                            <div class="p-3 bg-red-100 dark:bg-red-950/50 rounded-xl">
-                                <i data-lucide="receipt" class="w-6 h-6 text-red-600 font-bold"></i>
-                            </div>
-                            <span id="metric-tax-badge" class="text-xs font-bold text-red-500 bg-red-500/10 px-2 py-1 rounded">DAS Fixo</span>
-                        </div>
-                        <h3 class="text-slate-400 text-xs font-semibold uppercase tracking-wider mt-4">Imposto Estimado</h3>
-                        <p id="metric-taxes" class="text-2xl font-black text-slate-800 dark:text-white mt-1">R$ 0,00</p>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm lg:col-span-2 relative group tooltip-trigger">
-                        <div class="tooltip-content bg-slate-900/95 dark:bg-slate-800/95 text-white p-4 rounded-2xl border border-slate-700/50 shadow-xl text-xs">
-                            <h4 class="font-extrabold text-emerald-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-                                <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i> Desempenho Tributário
-                            </h4>
-                            <p class="leading-relaxed text-slate-200">Exibe a simulação histórica do fluxo de caixa e impostos incidentes sobre suas notas processadas de meses passados.</p>
-                        </div>
-                        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-6 flex items-center gap-2">
-                            <i data-lucide="bar-chart-2" class="w-5 h-5 text-emerald-500"></i> Performance Mensal e Impostos
-                        </h3>
-                        <div class="relative h-64 w-full flex items-end gap-3 px-2">
-                            <div class="absolute inset-y-0 left-0 right-0 flex flex-col justify-between pointer-events-none text-[10px] text-slate-400">
-                                <div class="border-b border-slate-100 dark:border-slate-800/50 w-full pb-1">R$ 150k</div>
-                                <div class="border-b border-slate-100 dark:border-slate-800/50 w-full pb-1">R$ 100k</div>
-                                <div class="border-b border-slate-100 dark:border-slate-800/50 w-full pb-1">R$ 50k</div>
-                                <div class="w-full">R$ 0</div>
-                            </div>
-                            <div class="flex-1 flex flex-col items-center justify-end h-full z-10">
-                                <div class="w-full max-w-[40px] bg-emerald-500/30 dark:bg-emerald-500/10 hover:bg-emerald-500 rounded-t-lg transition-all h-[40%]" title="Jan: R$ 60k"></div>
-                                <span class="text-[10px] text-slate-400 mt-2">Jan</span>
-                            </div>
-                            <div class="flex-1 flex flex-col items-center justify-end h-full z-10 bg-transparent">
-                                <div class="w-full max-w-[40px] bg-emerald-500/30 dark:bg-emerald-500/10 hover:bg-emerald-500 rounded-t-lg transition-all h-[55%]" title="Fev: R$ 82.5k font-bold"></div>
-                                <span class="text-[10px] text-slate-400 mt-2">Fev</span>
-                            </div>
-                            <div class="flex-1 flex flex-col items-center justify-end h-full z-10 bg-transparent">
-                                <div class="w-full max-w-[40px] bg-emerald-500/30 dark:bg-emerald-500/10 hover:bg-emerald-500 rounded-t-lg transition-all h-[70%]" title="Mar: R$ 105k"></div>
-                                <span class="text-[10px] text-slate-400 mt-2">Mar</span>
-                            </div>
-                            <div class="flex-1 flex flex-col items-center justify-end h-full z-10 bg-transparent">
-                                <div class="w-full max-w-[40px] bg-emerald-500/30 dark:bg-emerald-500/10 hover:bg-emerald-500 rounded-t-lg transition-all h-[85%]" title="Abr: R$ 127.5k"></div>
-                                <span class="text-[10px] text-slate-400 mt-2">Abr</span>
-                            </div>
-                            <div class="flex-1 flex flex-col items-center justify-end h-full z-10 bg-transparent">
-                                <div class="w-full max-w-[40px] bg-emerald-600 hover:bg-emerald-700 rounded-t-lg transition-all h-[95%] relative" title="Junho: Ativo">
-                                    <span id="chart-active-label" class="absolute -top-6 left-1/2 -translate-x-1/2 text-[9px] bg-emerald-950 text-emerald-400 font-bold px-1 py-0.5 rounded">Ativo</span>
-                                </div>
-                                <span class="text-[10px] text-slate-400 mt-2 font-bold text-emerald-600">Jun</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm flex flex-col justify-between relative group tooltip-trigger">
-                        <div class="tooltip-content bg-slate-900/95 dark:bg-slate-800/95 text-white p-4 rounded-2xl border border-slate-700/50 shadow-xl text-xs">
-                            <h4 class="font-extrabold text-teal-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-                                <i data-lucide="info" class="w-3.5 h-3.5"></i> Tributação Ativa
-                            </h4>
-                            <p class="leading-relaxed text-slate-200">As regras tributárias alteram todos os cálculos do site conforme as leis do MEI ou Simples Nacional.</p>
-                        </div>
-                        <div>
-                            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
-                                <i data-lucide="info" class="w-5 h-5 text-emerald-500"></i> Enquadramento Tributário
-                            </h3>
-                            <div class="space-y-4">
-                                <div id="mei-regime-info-box" class="border-l-4 border-emerald-500 pl-3">
-                                    <h4 class="text-xs font-bold text-emerald-600 dark:text-emerald-400">Microempreendedor Individual (MEI)</h4>
-                                    <p class="text-[11px] text-slate-500 dark:text-slate-400">Isenção de impostos sobre vendas simuladas na formação de preço. O limite anual é de R$ 81.000,00.</p>
-                                </div>
-                                <div id="nacional-regime-info-box" class="border-l-4 border-blue-500 pl-3 hidden">
-                                    <h4 class="text-xs font-bold text-blue-500">Simples Nacional</h4>
-                                    <p class="text-[11px] text-slate-500 dark:text-slate-400">Alíquota inicial federal de comércio simulada a partir de 4% sobre faturamento (Anexo I).</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/80 text-center">
-                            <span class="text-xs text-slate-400 block mb-2">Seu Plano Ativo na Planilha:</span>
-                            <span id="welcome-plan" class="inline-block bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-extrabold px-3 py-1.5 rounded-full text-xs uppercase">MEI - DAS Fixo</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section id="tab-xml-editor" class="tab-pane inactive-right space-y-6">
-                <div class="bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm transition-colors">
-                    <h3 class="text-base font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
-                        <i data-lucide="upload-cloud" class="w-5 h-5 text-emerald-500"></i> Importação de Notas Fiscais Eletrônicas (NF-e)
-                    </h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">
-                        Faça upload de arquivos XML reais da Receita Federal. O sistema irá ler as tags internas e permitir a alteração das margens de precificação de cada produto.
-                    </p>
-
-                    <div id="drop-zone" class="border-2 border-dashed border-emerald-300 dark:border-emerald-800 rounded-2xl p-8 text-center bg-emerald-500/5 hover:bg-emerald-500/10 transition-all cursor-pointer relative">
-                        <input type="file" id="xml-input" accept=".xml" class="absolute inset-0 opacity-0 cursor-pointer" onchange="handleXmlUpload(event)">
-                        <div class="flex flex-col items-center">
-                            <div class="w-14 h-14 bg-emerald-100 dark:bg-emerald-950/40 rounded-full flex items-center justify-center mb-3">
-                                <i data-lucide="file-code" class="w-8 h-8 text-emerald-600 dark:text-emerald-400"></i>
-                            </div>
-                            <h4 class="text-sm font-bold text-slate-700 dark:text-slate-200">Arraste seu arquivo XML da Nota Fiscal aqui</h4>
-                            <p class="text-xs text-slate-400 mt-1">Ou clique para procurar em seu dispositivo (Apenas arquivos .xml)</p>
-                        </div>
-                    </div>
-
-                    <div id="demo-notice" class="mt-4 flex justify-between items-center bg-blue-500/10 border border-blue-500/20 p-3 rounded-xl text-xs text-blue-800 dark:text-blue-300">
-                        <span class="flex items-center gap-1"><i data-lucide="help-circle" class="w-4 h-4"></i> Não possui um XML de NF-e real? Use um mock gerado para testes rápidos.</span>
-                        <button onclick="loadDemoXML()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1.5 px-3 rounded-lg transition-all shrink-0">Carregar Nota Demonstrativa</button>
-                    </div>
-                </div>
-
-                <div id="editor-workspace" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in-up">
-                    
-                    <div class="bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm flex flex-col max-h-[600px]">
-                        <div class="p-4 bg-slate-50 dark:bg-navy-950 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
-                            <div>
-                                <h4 class="text-sm font-bold text-slate-800 dark:text-white">Itens Extraídos</h4>
-                                <span id="xml-item-counter" class="text-[10px] text-slate-400">Carregando itens...</span>
-                            </div>
-                            <span class="text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold px-2 py-1 rounded">XML Pronto</span>
-                        </div>
-                        <div id="xml-items-list" class="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
-                            </div>
-                    </div>
-
-                    <div class="bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm lg:col-span-2 overflow-hidden flex flex-col">
-                        <div class="p-6 border-b border-slate-100 dark:border-slate-800/80 bg-gradient-to-r from-emerald-800 to-emerald-950 text-white flex justify-between items-center">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
-                                    <i data-lucide="package" class="w-5 h-5 text-emerald-400"></i>
-                                </div>
-                                <div>
-                                    <h4 class="text-sm font-bold uppercase tracking-wider text-emerald-400">Editando Item Selecionado</h4>
-                                    <span id="active-item-title" class="text-base font-black truncate max-w-md block">Nenhum produto selecionado</span>
-                                </div>
-                            </div>
-                            <div class="flex gap-1.5">
-                                <button onclick="navigateItem('prev')" class="p-2 hover:bg-white/10 rounded-lg transition-colors"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
-                                <button onclick="navigateItem('next')" class="p-2 hover:bg-white/10 rounded-lg transition-colors"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
-                            </div>
-                        </div>
-
-                        <div class="p-6 flex-1 space-y-6">
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                <div class="bg-slate-50 dark:bg-navy-950 p-3 rounded-xl border border-slate-200/40 dark:border-slate-800/40">
-                                    <span class="text-[10px] uppercase text-slate-400 font-bold block">Cod. Produto</span>
-                                    <span id="active-item-code" class="text-xs font-semibold">--</span>
-                                </div>
-                                <div class="bg-slate-50 dark:bg-navy-950 p-3 rounded-xl border border-slate-200/40 dark:border-slate-800/40">
-                                    <span class="text-[10px] uppercase text-slate-400 font-bold block">Qtd Comprada</span>
-                                    <span id="active-item-qty" class="text-xs font-semibold">--</span>
-                                </div>
-                                <div class="bg-slate-50 dark:bg-navy-950 p-3 rounded-xl border border-slate-200/40 dark:border-slate-800/40">
-                                    <span class="text-[10px] uppercase text-slate-400 font-bold block">Preço de Custo</span>
-                                    <span id="active-item-cost" class="text-xs font-semibold">--</span>
-                                </div>
-                                <div class="bg-slate-50 dark:bg-navy-950 p-3 rounded-xl border border-slate-200/40 dark:border-slate-800/40">
-                                    <span class="text-[10px] uppercase text-slate-400 font-bold block">Valor Total Nota</span>
-                                    <span id="active-item-total" class="text-xs font-semibold">--</span>
-                                </div>
-                            </div>
-
-                            <div class="bg-slate-50 dark:bg-navy-950 p-5 rounded-2xl border border-slate-200/60 dark:border-slate-800/80">
-                                <h4 class="text-xs font-extrabold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-3 flex items-center gap-1.5">
-                                    <i data-lucide="calculator" class="w-4 h-4"></i> Detalhamento Aritmético do Preço
-                                </h4>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                                    <div class="space-y-2">
-                                        <div class="flex justify-between border-b border-slate-200/45 dark:border-slate-800/45 pb-1">
-                                            <span class="text-slate-400">1. Custo Unitário de Nota:</span>
-                                            <span id="calc-cu" class="font-mono font-bold">R$ 0,00</span>
-                                        </div>
-                                        <div class="flex justify-between border-b border-slate-200/45 dark:border-slate-800/45 pb-1">
-                                            <span class="text-slate-400">2. Despesas Extras de Frete:</span>
-                                            <span id="calc-dop" class="font-mono font-bold">R$ 0,00</span>
-                                        </div>
-                                        <div class="flex justify-between border-b border-slate-200/45 dark:border-slate-800/45 pb-1">
-                                            <span class="text-slate-400">3. ICMS de Entrada:</span>
-                                            <span id="calc-iicms" class="font-mono font-bold">R$ 0,00</span>
-                                        </div>
-                                        <div class="flex justify-between pt-1 font-bold text-slate-800 dark:text-white">
-                                            <span>4. CUSTO REAL EFETIVO:</span>
-                                            <span id="calc-ceff" class="font-mono text-emerald-500">R$ 0,00</span>
-                                        </div>
-                                    </div>
-                                    <div class="space-y-2">
-                                        <div class="flex justify-between border-b border-slate-200/45 dark:border-slate-800/45 pb-1">
-                                            <span class="text-slate-400">5. Margem Aplicada:</span>
-                                            <span id="calc-margin" class="font-mono font-bold">0%</span>
-                                        </div>
-                                        <div class="flex justify-between border-b border-slate-200/45 dark:border-slate-800/45 pb-1">
-                                            <span class="text-slate-400">6. Alíquota Simples de Saída:</span>
-                                            <span id="calc-tax-out-rate" class="font-mono font-bold text-red-500">0%</span>
-                                        </div>
-                                        <div class="flex justify-between border-b border-slate-200/45 dark:border-slate-800/45 pb-1">
-                                            <span class="text-slate-400">7. Valor do Imposto na Venda:</span>
-                                            <span id="calc-tax-out-value" class="font-mono font-bold text-red-500">R$ 0,00</span>
-                                        </div>
-                                        <div class="flex justify-between pt-1 font-bold text-slate-800 dark:text-white">
-                                            <span>8. PREÇO DE VENDA RECOMENDADO:</span>
-                                            <span id="calc-pvenda" class="font-mono text-emerald-500">R$ 0,00</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                                <div class="space-y-4">
-                                    <h5 class="text-xs font-extrabold uppercase tracking-widest text-slate-400">Markup e Custos</h5>
-                                    
-                                    <div>
-                                        <div class="flex justify-between items-center mb-1.5">
-                                            <label class="text-xs font-bold">Margem de Lucro Desejada</label>
-                                            <span id="range-margin-val" class="text-xs font-extrabold text-emerald-500">40%</span>
-                                        </div>
-                                        <input type="range" id="input-margin-range" min="5" max="150" value="40" class="w-full accent-emerald-500 cursor-pointer" oninput="calculateActiveItemPrices()">
-                                    </div>
-
-                                    <div>
-                                        <label class="text-xs font-bold block mb-1">Custo de Operação (Frete/Embalagem %)</label>
-                                        <input type="number" id="input-shipping-cost" value="5" class="w-full bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500" oninput="calculateActiveItemPrices()">
-                                    </div>
-
-                                    <div>
-                                        <label class="text-xs font-bold block mb-1">Alíquota ICMS (%)</label>
-                                        <input type="number" id="input-icms-rate" value="12" class="w-full bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500" oninput="calculateActiveItemPrices()">
-                                    </div>
-                                </div>
-
-                                <div class="bg-emerald-500/5 dark:bg-emerald-950/20 border border-emerald-500/20 rounded-2xl p-6 flex flex-col justify-between">
-                                    <div>
-                                        <h5 class="text-xs font-extrabold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-4">Simulação de Venda</h5>
-                                        
-                                        <div class="space-y-3">
-                                            <div class="flex justify-between text-xs text-slate-500">
-                                                <span>Custo de Compra:</span>
-                                                <span id="summary-base-cost">R$ 0,00</span>
-                                            </div>
-                                            <div class="flex justify-between text-xs text-slate-500">
-                                                <span>Despesas Adicionais (Frete):</span>
-                                                <span id="summary-expenses">R$ 0,00</span>
-                                            </div>
-                                            <div class="flex justify-between text-xs text-slate-500">
-                                                <span>Impostos Estimados:</span>
-                                                <span id="summary-taxes">R$ 0,00</span>
-                                            </div>
-                                            <div class="border-t border-slate-200 dark:border-slate-800/80 my-2 pt-2 flex justify-between font-bold text-sm">
-                                                <span>Preço Mínimo Recomendado:</span>
-                                                <span id="summary-recommended-price" class="text-emerald-500">R$ 0,00</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <button onclick="saveActiveItemConfig()" class="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
-                                        <i data-lucide="check" class="w-5 h-5"></i>
-                                        <span>Confirmar Precificação</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="p-4 bg-slate-50 dark:bg-navy-950 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-3">
-                            <span class="text-xs text-slate-400">Após salvar os itens, salve os arquivos diretamente em suas pastas mensais.</span>
-                            <div class="flex gap-2">
-                                <button onclick="simulateExport('csv')" class="bg-slate-200 dark:bg-navy-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-navy-700 text-xs font-bold py-2.5 px-4 rounded-xl transition-all flex items-center gap-1.5">
-                                    <i data-lucide="download" class="w-4 h-4"></i> Exportar CSV
-                                </button>
-                                <button onclick="saveToCurrentMonthFolder()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl transition-all flex items-center gap-1.5">
-                                    <i data-lucide="folder-plus" class="w-4 h-4"></i> Guardar na Pasta do Mês
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section id="tab-reports" class="tab-pane inactive-right space-y-6">
-                <div class="bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                        <div>
-                            <span class="text-xs uppercase tracking-widest font-extrabold text-blue-500">Gestor de Arquivos Inteligente</span>
-                            <h3 class="text-xl font-bold text-slate-800 dark:text-white mt-1">Sua Estrutura de Armazenamento por Mês</h3>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">Clique em qualquer pasta para abrir, inspecionar e baixar os XMLs salvos.</p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span id="drive-status-badge" class="bg-green-500/15 text-green-500 font-bold px-3 py-1.5 rounded-full text-xs flex items-center gap-1.5">
-                                <span class="w-2 h-2 rounded-full bg-green-500"></span> Google Drive Conectado
-                            </span>
-                        </div>
-                    </div>
-
-                    <div id="dynamic-folders-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                        </div>
-                </div>
-
-                <div id="folder-inspector-panel" class="hidden bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-md animate-fade-in-up">
-                    <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800/80 pb-4 mb-4">
-                        <div class="flex items-center gap-3">
-                            <div class="p-2.5 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl">
-                                <i data-lucide="folder-open" class="w-6 h-6"></i>
-                            </div>
-                            <div>
-                                <h4 class="text-lg font-bold">Conteúdo da Pasta: <span id="inspected-folder-title" class="text-emerald-600">Janeiro</span></h4>
-                                <p class="text-xs text-slate-400">Estes são os XMLs salvos nesta competência para auditoria fiscal.</p>
-                            </div>
-                        </div>
-                        <button onclick="closeFolderInspector()" class="text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-white bg-slate-100 dark:bg-navy-800 px-3 py-1.5 rounded-xl">Fechar Pasta</button>
-                    </div>
-
-                    <div id="folder-empty-notice" class="py-8 text-center text-slate-400 text-xs hidden">
-                        <i data-lucide="archive" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>
-                        Esta pasta mensal está vazia. Faça o processamento de um XML e guarde-o aqui!
-                    </div>
-
-                    <div id="folder-xml-list" class="divide-y divide-slate-100 dark:divide-slate-800/60">
-                        </div>
-                </div>
-
-                <div class="bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
-                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
-                        <i data-lucide="history" class="w-5 h-5 text-emerald-500"></i> Histórico Geral de Envios e Auditorias
-                    </h3>
-
-                    <div id="global-audits-list" class="divide-y divide-slate-100 dark:divide-slate-800/80">
-                        </div>
-                </div>
-            </section>
-
-            <section id="tab-settings" class="tab-pane inactive-right space-y-6">
-                <div class="bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-sm max-w-3xl mx-auto">
-                    <div class="flex justify-between items-start md:items-center flex-col sm:flex-row gap-4 mb-8 pb-4 border-b border-slate-100 dark:border-slate-800">
-                        <div class="flex items-center gap-3">
-                            <div class="w-12 h-12 bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center shadow-sm">
-                                <i data-lucide="settings-2" class="w-6 h-6"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-xl font-bold text-slate-800 dark:text-white">Painel de Licenciamento & Nuvem</h3>
-                                <p class="text-xs text-slate-500 dark:text-slate-400">Protegido localmente no dispositivo. Salva e sincroniza as chaves do Google Sheets.</p>
-                            </div>
-                        </div>
-                        <button onclick="promptAdminPassword()" class="bg-slate-100 hover:bg-slate-200 dark:bg-navy-800 dark:hover:bg-navy-750 text-slate-700 dark:text-slate-200 text-xs font-bold py-2.5 px-4 rounded-xl flex items-center gap-2 border border-slate-200 dark:border-slate-700 transition-all">
-                            <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
-                            <span>Abrir Planilha Interna</span>
-                        </button>
-                    </div>
-
-                    <div class="space-y-6">
-                        <div class="flex justify-between items-center bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl">
-                            <div class="flex gap-2.5 text-xs text-emerald-800 dark:text-emerald-300">
-                                <i data-lucide="lock" class="w-5 h-5 shrink-0 mt-0.5"></i>
-                                <div>
-                                    <p class="font-bold mb-0.5">Sincronização 100% Blindada</p>
-                                    Ao salvar os links nesta aba, eles são gravados no <strong>armazenamento físico local do seu dispositivo</strong>. Nenhum dado privado é exposto no código público do GitHub!
-                                </div>
-                            </div>
-                        </div>
-
-                        <h4 class="text-xs font-extrabold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Conexão Google Drive / Sheets</h4>
-                        
-                        <div>
-                            <label class="block text-xs font-bold mb-2 text-slate-700 dark:text-slate-300">Link da Planilha do AppSheet / Google Sheets (Clientes/Logins)</label>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 pointer-events-none">
-                                    <i data-lucide="table-properties" class="w-5 h-5"></i>
-                                </span>
-                                <input type="url" id="setting-sheet-link" class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" placeholder="https://docs.google.com/spreadsheets/d/.../edit">
-                            </div>
-                            <span class="text-[10px] text-slate-400 mt-1 block">O sistema valida logins ativos, CNPJ e o "Código de Licença" diretamente desta URL.</span>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-bold mb-2 text-slate-700 dark:text-slate-300">Link da Pasta de Depósito de XMLs no Google Drive</label>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 pointer-events-none">
-                                    <i data-lucide="folder-git-2" class="w-5 h-5"></i>
-                                </span>
-                                <input type="url" id="setting-drive-link" class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" placeholder="https://drive.google.com/drive/folders/... ">
-                            </div>
-                            <span class="text-[10px] text-slate-400 mt-1 block">Pasta corporativa principal do Google Drive onde os arquivos mensais de relatórios são consolidados.</span>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-bold mb-2 text-slate-700 dark:text-slate-300">Link da Pasta Privada do Cliente Ativo (Pasta Individual)</label>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 pointer-events-none">
-                                    <i data-lucide="user-check" class="w-5 h-5"></i>
-                                </span>
-                                <input type="url" id="setting-client-drive-link" class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" placeholder="https://drive.google.com/drive/folders/ID_INDIVIDUAL_DO_CLIENTE">
-                            </div>
-                            <span class="text-[10px] text-slate-400 mt-1 block">Pasta pessoal do cliente onde as notas individuais dele serão armazenadas.</span>
-                        </div>
-
-                        <div class="flex gap-3 pt-2">
-                            <button onclick="saveIntegrationSettings()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
-                                <i data-lucide="save" class="w-5 h-5"></i>
-                                <span>Salvar Conexões</span>
-                            </button>
-                            <button onclick="syncExternalSheetData()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
-                                <i data-lucide="refresh-cw" class="w-5 h-5"></i>
-                                <span>Sincronizar Planilha</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </main>
-    </div>
-
-    <div id="explanation-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center px-4 animate-fade-in-up">
-        <div class="bg-white dark:bg-navy-900 rounded-3xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col shadow-2xl border border-slate-200 dark:border-slate-800">
-            <div class="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-gradient-to-r from-emerald-800 to-emerald-950 text-white">
-                <div class="flex items-center gap-3">
-                    <i data-lucide="help-circle" class="w-7 h-7 text-emerald-400"></i>
+                <div class="space-y-4 border-t border-slate-800 pt-4">
                     <div>
-                        <h2 class="text-xl font-bold">Como o cálculo fiscal é realizado?</h2>
-                        <p class="text-xs text-emerald-200/80">Entenda a matemática tributária aplicada pelo Orb</p>
-                    </div>
-                </div>
-                <button onclick="closeExplicationModal()" class="p-2 hover:bg-white/10 rounded-full transition-colors">
-                    <i data-lucide="x" class="w-6 h-6"></i>
-                </button>
-            </div>
-
-            <div class="p-6 overflow-y-auto flex-1 space-y-6 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                <div>
-                    <h3 class="font-extrabold text-slate-950 dark:text-white mb-2 flex items-center gap-2">
-                        <span class="w-5 h-5 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center text-xs font-bold">1</span>
-                        Composição do Custo Real Efetivo
-                    </h3>
-                    <p class="pl-7 mb-2">Para encontrar o custo real da sua mercadoria no estoque, a calculadora soma todos os encargos logísticos e fiscais incidentes na compra:</p>
-                    <div class="bg-slate-50 dark:bg-navy-950 p-4 rounded-2xl pl-7 border border-slate-200/50 dark:border-slate-850 font-mono text-xs text-slate-800 dark:text-slate-200">
-                        Custo Efetivo = Preço da Nota + Frete/Despesas (%) + ICMS (%)
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Enquadramento Fiscal Ativo</label>
+                        <select id="config-regime-select" disabled class="w-full bg-slate-950 border border-slate-800 text-slate-500 rounded-lg py-2.5 px-3 font-medium transition-all outline-none cursor-not-allowed text-base">
+                            <option value="comparativo">Modo Demo / Comparativo Global</option>
+                            <option value="mei">MEI</option>
+                            <option value="simples">Simples Nacional</option>
+                            <option value="presumido">Lucro Presumido</option>
+                            <option value="real">Lucro Real</option>
+                        </select>
                     </div>
                 </div>
 
-                <div>
-                    <h3 class="font-extrabold text-slate-950 dark:text-white mb-2 flex items-center gap-2">
-                        <span class="w-5 h-5 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center text-xs font-bold">2</span>
-                        Aplicação da Margem de Lucro (Markup)
-                    </h3>
-                    <p class="pl-7 mb-2">A margem desejada pelo lojista é projetada sobre o custo efetivo calculado na etapa anterior:</p>
-                    <div class="bg-slate-50 dark:bg-navy-950 p-4 rounded-2xl pl-7 border border-slate-200/50 dark:border-slate-850 font-mono text-xs text-slate-800 dark:text-slate-200">
-                        Preço Base Venda = Custo Efetivo * (1 + Margem Desejada %)
+                <div id="adm-lock-zone" class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
+                    <div class="flex items-center space-x-2 text-indigo-400 font-semibold text-xs uppercase tracking-wider">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                        <span>Painel Seguro do Administrador</span>
+                    </div>
+                    <p class="text-xs text-slate-400">Insira a credencial mestre para liberar modificações no Core Tributário.</p>
+                    <div class="flex space-x-2">
+                        <input type="password" id="adm-password-input" placeholder="Senha Mestra" class="bg-[#020617] border border-slate-700 rounded-lg py-2 px-3 text-base outline-none focus:ring-1 focus:ring-emerald-500 text-white w-full">
+                        <button onclick="unlockSettings()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition-all shadow-md whitespace-nowrap">
+                            Autenticar
+                        </button>
                     </div>
                 </div>
-
-                <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
-                    <h3 class="font-extrabold text-slate-950 dark:text-white mb-3 flex items-center gap-2">
-                        <i data-lucide="sliders" class="w-5 h-5 text-emerald-500"></i>
-                        Diferenciação por Regime Tributário
-                    </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="bg-emerald-500/5 border border-emerald-500/20 p-4 rounded-2xl">
-                            <h4 class="font-bold text-emerald-700 dark:text-emerald-400 mb-1">Empresa MEI</h4>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">Microempresas MEI recolhem imposto fixo mensal DAS-MEI. Logo, as vendas têm <strong>isenção de imposto (0%)</strong> na saída direta de cálculo, barateando o preço final.</p>
-                        </div>
-                        <div class="bg-blue-500/5 border border-blue-500/20 p-4 rounded-2xl">
-                            <h4 class="font-bold text-blue-600 dark:text-blue-400 mb-1">Simples Nacional</h4>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">Microempresas e EPPs nacionais recolhem impostos sob faturamento. A calculadora assume a alíquota base progressiva de <strong>4% de imposto de saída</strong>.</p>
-                        </div>
-                    </div>
+                
+                <div id="adm-unlocked-badge" class="hidden bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3 rounded-lg text-xs font-semibold">
+                    Modo Administrativo Concedido. Alterações liberadas.
                 </div>
             </div>
         </div>
-    </div>
+    </main>
 
     <script>
-        // BASE DE DADOS DE AUTENTICAÇÃO COM NOVOS CAMPOS E ADMIN FIXADO NA RAIZ
-        const DEFAULT_USERS_DB = [
-            { id: "1", name: "Marcio Silva Comércio Ltda", cnpj: "12.345.678/0001-99", email: "marcio@empresa.com", password: "123", licenseCode: "LIC-MEI-2026-X98", plan: "MEI", active: true },
-            { id: "2", name: "Suporte Fiscal Tech", cnpj: "98.765.432/0001-11", email: "suporte@empresa.com", password: "123", licenseCode: "LIC-NAC-2026-A12", plan: "Nacional", active: true },
-            { id: "3", name: "Empresa Bloqueada S/A", cnpj: "11.222.333/0001-44", email: "inativo@empresa.com", password: "123", licenseCode: "", plan: "MEI", active: false },
-            { id: "demo", name: "Demonstração ADM", cnpj: "00.000.000/0001-00", email: "demoadm@dev.com", password: "12345678", licenseCode: "ADM-MASTER-KEY", plan: "Nacional", active: true }
-        ];
-
-        // MOCK DE PASTAS MENSAIS COM XMLs
-        const DEMO_XML_DATABASE = {
-            "Janeiro": [
-                { id: "xml_jan_1", name: "NFe_35260101_Cabo.xml", date: "10/01/2026", cost: 675.00, count: 15, items: [{ name: "Cabo de Rede Cat6 Premium 10m", qty: 15, cost: 45.00, margin: 40, recommendedPrice: 63.00 }] },
-                { id: "xml_jan_2", name: "NFe_35260102_Switch.xml", date: "24/01/2026", cost: 960.00, count: 8, items: [{ name: "Switch Gigabit 8 Portas", qty: 8, cost: 120.00, margin: 35, recommendedPrice: 162.00 }] }
-            ],
-            "Fevereiro": [
-                { id: "xml_feb_1", name: "NFe_35260201_Router.xml", date: "12/02/2026", cost: 925.00, count: 5, items: [{ name: "Roteador Wireless Gigabyte AC1200", qty: 5, cost: 185.00, margin: 45, recommendedPrice: 268.25 }] }
-            ],
-            "Março": [
-                { id: "xml_mar_1", name: "NFe_35260301_RJ45.xml", date: "18/03/2026", cost: 700.00, count: 20, items: [{ name: "Conector RJ45 blindado (Pote c/ 50)", qty: 20, cost: 35.00, margin: 50, recommendedPrice: 52.50 }] }
-            ],
-            "Maio": [
-                { id: "xml_may_1", name: "NFe_35260501_Suprimentos.xml", date: "05/05/2026", cost: 1250.00, count: 10, items: [{ name: "Suporte de Monitor Articulado", qty: 10, cost: 125.00, margin: 40, recommendedPrice: 175.00 }] }
-            ]
+        const TAX_RULES = {
+            mei: { saida: 0.0, nome: "MEI" },
+            simples: { saida: 0.04, nome: "Simples Nacional" }, 
+            icmsOut: 0.17,
+            presumido: { pisCofins: 0.0365, irpjCsll: 0.0228, nome: "Lucro Presumido" },
+            real: { pisCofins: 0.0925, irpjCsll: 0.0869, nome: "Lucro Real" }
         };
 
-        let usersDb = JSON.parse(localStorage.getItem('fiscal_users_db')) || DEFAULT_USERS_DB;
-        let currentUser = JSON.parse(localStorage.getItem('fiscal_current_user')) || null;
-        let currentTab = 'dashboard';
+        let produtos = []; let resultados = []; let indexAtual = 0; let currentXmlName = "";
 
-        let xmlDatabase = {};
-        let currentXmlProducts = [];
-        let activeProductIndex = -1;
+        const xmlInput = document.getElementById('xml-input');
+        const uploadZone = document.getElementById('upload-zone');
+        const dashboard = document.getElementById('dashboard');
+        const productList = document.getElementById('product-list');
+        const marginInput = document.getElementById('margin-input');
+        const freightInput = document.getElementById('input-freight');
+        const icmsInInput = document.getElementById('input-icms-in');
+        const btnNext = document.getElementById('btn-next');
+        const btnExport = document.getElementById('btn-export');
+        const selectRegime = document.getElementById('config-regime-select');
+        const activeRegimeBadge = document.getElementById('active-regime-badge');
 
-        let touchStartX = 0;
-        let touchEndX = 0;
+        // SINCRONIZAÇÃO DE ABAS RESPONSIVAS (DESKTOP + INSTAGRAM MOBILE BAR)
+        function switchTab(tab) {
+            ['dash', 'hist', 'conf'].forEach(t => {
+                document.getElementById(`tab-content-${t}`).classList.add('hidden');
+                
+                // Desativa estilos Desktop
+                document.getElementById(`dk-tab-${t}`).className = "px-4 py-1.5 rounded-md text-sm font-medium transition-all text-slate-400 hover:text-white";
+                // Desativa estilos Mobile Bar
+                document.getElementById(`mb-tab-${t}`).className = "flex flex-col items-center justify-center w-full h-full text-slate-400 transition-all";
+            });
+            
+            // Ativa os elementos da aba selecionada
+            document.getElementById(`tab-content-${tab}`).classList.remove('hidden');
+            document.getElementById(`dk-tab-${tab}`).className = "px-4 py-1.5 rounded-md text-sm font-medium transition-all bg-emerald-600 text-white shadow-sm";
+            document.getElementById(`mb-tab-${tab}`).className = "flex flex-col items-center justify-center w-full h-full text-emerald-400 transition-all";
+            
+            if(tab === 'hist') renderHistorico();
+        }
 
-        // SELETOR MOSTRAR E OCULTAR SENHA
-        function togglePasswordVisibility() {
-            const passwordInput = document.getElementById('login-password');
-            const icon = document.getElementById('toggle-password-icon');
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                icon.setAttribute('data-lucide', 'eye-off');
+        function unlockSettings() {
+            if(document.getElementById('adm-password-input').value === '1QAZ2WSX') {
+                selectRegime.disabled = false;
+                selectRegime.className = "w-full bg-[#020617] border border-slate-700 text-white rounded-lg py-2.5 px-3 font-medium transition-all outline-none cursor-pointer focus:border-emerald-500 text-sm";
+                document.getElementById('adm-lock-zone').classList.add('hidden');
+                document.getElementById('adm-unlocked-badge').classList.remove('hidden');
             } else {
-                passwordInput.type = 'password';
-                icon.setAttribute('data-lucide', 'eye');
-            }
-            lucide.createIcons();
-        }
-
-        // CONTROLADOR DE EXPLANATION MODAL
-        function openExplicationModal() {
-            document.getElementById('explanation-modal').classList.remove('hidden');
-            document.getElementById('explanation-modal').classList.add('flex');
-        }
-
-        function closeExplicationModal() {
-            document.getElementById('explanation-modal').classList.add('hidden');
-            document.getElementById('explanation-modal').classList.remove('flex');
-        }
-
-        // CARREGA AVATAR DO STORAGE LOCAL
-        function loadSavedAvatar() {
-            const savedAvatar = localStorage.getItem('user_avatar_base64');
-            if (savedAvatar) {
-                document.getElementById('header-avatar').src = savedAvatar;
-                document.getElementById('dropdown-avatar').src = savedAvatar;
+                alert('Senha mestra incorreta.');
             }
         }
 
-        // DISPARA SELEÇÃO DE ARQUIVO
-        function triggerAvatarUpload() {
-            document.getElementById('avatar-file-input').click();
-        }
+        selectRegime.addEventListener('change', () => {
+            activeRegimeBadge.innerText = selectRegime.options[selectRegime.selectedIndex].text;
+            if(produtos.length > 0) calculatePrices();
+        });
 
-        // FAZ O UPLOAD DA IMAGEM E CONVERTE EM BASE64
-        function handleAvatarUpload(event) {
-            const file = event.target.files[0];
+        xmlInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
             if (!file) return;
-
+            currentXmlName = file.name;
             const reader = new FileReader();
-            reader.onload = function(e) {
-                const base64Image = e.target.result;
-                localStorage.setItem('user_avatar_base64', base64Image);
-                document.getElementById('header-avatar').src = base64Image;
-                document.getElementById('dropdown-avatar').src = base64Image;
-                showToast("Sua foto de perfil foi atualizada com sucesso!", "success");
-            };
-            reader.readAsDataURL(file);
-        }
-
-        // VALIDAÇÃO DA LICENÇA EM TEMPO REAL
-        function initSession() {
-            const adminExists = usersDb.some(u => u.email.toLowerCase() === 'demoadm@dev.com');
-            if (!adminExists) {
-                usersDb.push({ id: "demo", name: "Demonstração ADM", cnpj: "00.000.000/0001-00", email: "demoadm@dev.com", password: "12345678", licenseCode: "ADM-MASTER-KEY", plan: "Nacional", active: true });
-                localStorage.setItem('fiscal_users_db', JSON.stringify(usersDb));
-            }
-
-            if (currentUser) {
-                if (currentUser.email.toLowerCase() === 'demoadm@dev.com') {
-                    currentUser = usersDb.find(u => u.email.toLowerCase() === 'demoadm@dev.com');
-                } else {
-                    const updatedUser = usersDb.find(u => u.email.toLowerCase() === currentUser.email.toLowerCase());
-                    
-                    if (!updatedUser || !updatedUser.active || !updatedUser.licenseCode || updatedUser.licenseCode.trim() === "") {
-                        showLicenseLock(updatedUser ? updatedUser.cnpj : "Sem CNPJ Registrado");
-                        return;
-                    }
-                    currentUser = updatedUser;
-                }
-
-                localStorage.setItem('fiscal_current_user', JSON.stringify(currentUser));
-                
-                const userDbKey = `xml_db_${currentUser.id}`;
-                xmlDatabase = JSON.parse(localStorage.getItem(userDbKey)) || {};
-                
-                if (currentUser.id === 'demo' && Object.keys(xmlDatabase).length === 0) {
-                    xmlDatabase = DEMO_XML_DATABASE;
-                    localStorage.setItem(userDbKey, JSON.stringify(xmlDatabase));
-                }
-
-                hideLicenseLock();
-                showAppShell();
-            } else {
-                showLoginScreen();
-            }
-        }
-
-        function showLicenseLock(cnpj) {
-            document.getElementById('locked-cnpj').innerText = cnpj || "Não Registrado";
-            document.getElementById('license-lock-screen').classList.remove('hidden');
-            document.getElementById('license-lock-screen').classList.add('flex');
-            document.getElementById('app-shell').classList.add('hidden');
-            document.getElementById('login-screen').classList.add('hidden');
-        }
-
-        function hideLicenseLock() {
-            document.getElementById('license-lock-screen').classList.add('hidden');
-            document.getElementById('license-lock-screen').classList.remove('flex');
-        }
-
-        // SWIPE NAVEGAÇÃO DE TOQUE (ESTILO INSTAGRAM)
-        function setupSwipeNavigation() {
-            const mainContainer = document.getElementById('app-shell');
-            if (!mainContainer) return;
-            
-            mainContainer.addEventListener('touchstart', e => {
-                touchStartX = e.changedTouches[0].screenX;
-            }, { passive: true });
-
-            mainContainer.addEventListener('touchend', e => {
-                touchEndX = e.changedTouches[0].screenX;
-                handleSwipeGesture();
-            }, { passive: true });
-        }
-
-        function handleSwipeGesture() {
-            const swipeThreshold = 80;
-            const tabsOrder = ['dashboard', 'xml-editor', 'reports'];
-            
-            if (currentUser && currentUser.email.toLowerCase() === 'demoadm@dev.com') {
-                tabsOrder.push('settings');
-            }
-
-            const currentIndex = tabsOrder.indexOf(currentTab);
-
-            if (touchStartX - touchEndX > swipeThreshold) {
-                if (currentIndex < tabsOrder.length - 1) {
-                    switchTab(tabsOrder[currentIndex + 1]);
-                }
-            } else if (touchEndX - touchStartX > swipeThreshold) {
-                if (currentIndex > 0) {
-                    switchTab(tabsOrder[currentIndex - 1]);
-                }
-            }
-        }
-
-        // RELÓGIO & DATA DA INTERNET
-        function setupClock() {
-            updateClock();
-            setInterval(updateClock, 1000);
-        }
-
-        function updateClock() {
-            const now = new Date();
-            const timeStr = now.toLocaleTimeString('pt-BR');
-            const timeElement = document.getElementById('widget-time');
-            if (timeElement) timeElement.innerText = timeStr;
-
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            const dateStr = now.toLocaleDateString('pt-BR', options);
-            const capitalizedDateStr = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
-            const dateElement = document.getElementById('widget-date');
-            if (dateElement) dateElement.innerText = capitalizedDateStr;
-
-            const timezoneStr = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            const tzElement = document.getElementById('widget-timezone');
-            if (tzElement) tzElement.innerText = timezoneStr;
-        }
-
-        function loadSavedIntegrationLinks() {
-            const sheetLink = localStorage.getItem('cfg_sheet_link') || '';
-            const driveLink = localStorage.getItem('cfg_drive_link') || '';
-            const clientDriveLink = localStorage.getItem('cfg_client_drive_link') || '';
-
-            const sheetInput = document.getElementById('setting-sheet-link');
-            const driveInput = document.getElementById('setting-drive-link');
-            const clientDriveInput = document.getElementById('setting-client-drive-link');
-
-            if (sheetInput) sheetInput.value = sheetLink;
-            if (driveInput) driveInput.value = driveLink;
-            if (clientDriveInput) clientDriveInput.value = clientDriveLink;
-
-            const badge = document.getElementById('drive-status-badge');
-            if (badge) {
-                if (driveLink) {
-                    badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Google Drive Conectado`;
-                } else {
-                    badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-500"></span> Google Drive Padrão`;
-                }
-            }
-        }
-
-        function saveIntegrationSettings() {
-            const sheetLink = document.getElementById('setting-sheet-link').value.trim();
-            const driveLink = document.getElementById('setting-drive-link').value.trim();
-            const clientDriveLink = document.getElementById('setting-client-drive-link').value.trim();
-
-            localStorage.setItem('cfg_sheet_link', sheetLink);
-            localStorage.setItem('cfg_drive_link', driveLink);
-            localStorage.setItem('cfg_client_drive_link', clientDriveLink);
-
-            showToast("Links de nuvem salvos com segurança!", "success");
-            loadSavedIntegrationLinks();
-            
-            setTimeout(() => {
-                switchTab('dashboard');
-            }, 800);
-        }
-
-        async function syncExternalSheetData() {
-            const sheetUrl = localStorage.getItem('cfg_sheet_link');
-            if (!sheetUrl) {
-                showToast("Para sincronizar, salve a URL da planilha antes.", "danger");
-                return;
-            }
-
-            showToast("Sincronizando com banco de dados externo do Google...", "info");
-            
-            try {
-                if (sheetUrl.includes("exec")) {
-                    const response = await fetch(sheetUrl + "?action=getUsers");
-                    const data = await response.json();
-                    if (data.success && data.users) {
-                        usersDb = data.users;
-                        localStorage.setItem('fiscal_users_db', JSON.stringify(usersDb));
-                        showToast("Dados de licenciamento atualizados com sucesso do Google Sheets!", "success");
-                        initSession();
-                        return;
-                    }
-                }
-                
-                setTimeout(() => {
-                    showToast("Planilha sincronizada de forma segura!", "success");
-                    initSession();
-                }, 1500);
-
-            } catch (err) {
-                showToast("Erro de sincronização com a planilha externa.", "danger");
-            }
-        }
-
-        function showToast(message, type = 'success') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = `p-4 rounded-xl shadow-lg border text-xs font-semibold flex items-center gap-2 transform translate-y-2 opacity-0 transition-all duration-300 ${
-                type === 'success' ? 'bg-emerald-100 border-emerald-200 text-emerald-800 dark:bg-emerald-950 dark:border-emerald-800 dark:text-emerald-300' :
-                type === 'danger' ? 'bg-red-100 border-red-200 text-red-800 dark:bg-red-950 dark:border-red-800 dark:text-red-300' :
-                'bg-blue-100 border-blue-200 text-blue-800 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300'
-            }`;
-            
-            let icon = 'info';
-            if (type === 'success') icon = 'check-circle';
-            if (type === 'danger') icon = 'alert-triangle';
-
-            toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4"></i> <span>${message}</span>`;
-            container.appendChild(toast);
-            lucide.createIcons();
-
-            setTimeout(() => {
-                toast.classList.remove('translate-y-2', 'opacity-0');
-            }, 10);
-
-            setTimeout(() => {
-                toast.classList.add('translate-y-2', 'opacity-0');
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
-        }
-
-        function handleLogin(event) {
-            event.preventDefault();
-            const inputLogin = document.getElementById('login-email').value.trim();
-            const password = document.getElementById('login-password').value;
-
-            // LOGIN ESPECIAL DO ADM MASTER DIRETO NA RAIZ
-            if (inputLogin.toLowerCase() === 'demoadm@dev.com' && password === '12345678') {
-                currentUser = usersDb.find(u => u.email.toLowerCase() === 'demoadm@dev.com');
-                localStorage.setItem('fiscal_current_user', JSON.stringify(currentUser));
-                hideLicenseLock();
-                showAppShell();
-                showToast("Sessão Master do Administrador iniciada!", "success");
-                return;
-            }
-
-            const user = usersDb.find(u => {
-                return (u.email.toLowerCase() === inputLogin.toLowerCase() || u.name.toLowerCase() === inputLogin.toLowerCase());
-            });
-
-            if (!user) {
-                showToast("Login ou senha incorretos.", "danger");
-                return;
-            }
-
-            if (user.password !== password) {
-                showToast("Senha incorreta.", "danger");
-                return;
-            }
-
-            // AUTO VALIDAÇÃO DO TOKEN VINCULADO NO SHEET
-            if (!user.licenseCode || user.licenseCode.trim() === "" || !user.active) {
-                showToast("Erro: Licença do cliente inativa ou bloqueada no Sheets.", "danger");
-                showLicenseLock(user.cnpj);
-                return;
-            }
-
-            currentUser = user;
-            if (document.getElementById('login-remember').checked) {
-                localStorage.setItem('fiscal_current_user', JSON.stringify(currentUser));
-            }
-            
-            const userDbKey = `xml_db_${currentUser.id}`;
-            xmlDatabase = JSON.parse(localStorage.getItem(userDbKey)) || {};
-            if (currentUser.id === 'demo' && Object.keys(xmlDatabase).length === 0) {
-                xmlDatabase = DEMO_XML_DATABASE;
-                localStorage.setItem(userDbKey, JSON.stringify(xmlDatabase));
-            }
-
-            showToast(`Sessão iniciada como ${user.name}!`, "success");
-            showAppShell();
-        }
-
-        function handleLogout() {
-            currentUser = null;
-            localStorage.removeItem('fiscal_current_user');
-            hideLicenseLock();
-            showLoginScreen();
-            showToast("Sessão encerrada.", "info");
-        }
-
-        function showLoginScreen() {
-            document.getElementById('login-screen').classList.remove('hidden');
-            document.getElementById('login-screen').style.opacity = '1';
-            document.getElementById('app-shell').classList.add('hidden');
-        }
-
-        function showAppShell() {
-            document.getElementById('login-screen').style.opacity = '0';
-            setTimeout(() => {
-                document.getElementById('login-screen').classList.add('hidden');
-            }, 300);
-            document.getElementById('app-shell').classList.remove('hidden');
-            
-            document.getElementById('header-username').innerText = currentUser.name;
-            document.getElementById('dropdown-username').innerText = currentUser.name;
-            document.getElementById('welcome-username').innerText = currentUser.name;
-            document.getElementById('dropdown-email').innerText = currentUser.email;
-            document.getElementById('user-badge').innerText = currentUser.plan;
-            document.getElementById('profile-regime-badge').innerText = `Regime: ${currentUser.plan}`;
-
-            // ADAPTAÇÃO TRIBUTÁRIA DINÂMICA
-            const isMEI = currentUser.plan.toUpperCase() === 'MEI';
-            const badgeRegime = document.getElementById('regime-warning-badge');
-            const descRegime = document.getElementById('regime-description-text');
-            const labelPlan = document.getElementById('welcome-plan');
-            const infoMEI = document.getElementById('mei-regime-info-box');
-            const infoNacional = document.getElementById('nacional-regime-info-box');
-            const taxBadge = document.getElementById('metric-tax-badge');
-
-            if (isMEI) {
-                badgeRegime.innerText = "Regime Ativo: MEI (Isenção DAS)";
-                badgeRegime.className = "text-[10px] uppercase tracking-widest font-extrabold text-emerald-400 bg-emerald-950/80 px-2 py-1 rounded";
-                descRegime.innerText = "Sua empresa está enquadrada no regime MEI. O imposto federal das vendas simuladas é isento, otimizando o preço final recomendado para comércio de mercadorias.";
-                labelPlan.innerText = "MEI - DAS Fixo Mensal";
-                labelPlan.className = "inline-block bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-extrabold px-3 py-1.5 rounded-full text-xs uppercase";
-                infoMEI.classList.remove('hidden');
-                infoNacional.classList.add('hidden');
-                taxBadge.innerText = "Isento (MEI)";
-                taxBadge.className = "text-xs font-bold text-emerald-600 bg-emerald-500/10 px-2 py-1 rounded";
-            } else {
-                badgeRegime.innerText = "Regime Ativo: Simples Nacional";
-                badgeRegime.className = "text-[10px] uppercase tracking-widest font-extrabold text-blue-400 bg-blue-950/80 px-2 py-1 rounded";
-                descRegime.innerText = "Sua empresa está enquadrada no Simples Nacional. O sistema aplica automaticamente a tributação federal progressiva de 4% sobre vendas comerciais simuladas.";
-                labelPlan.innerText = "Simples Nacional - Comércio";
-                labelPlan.className = "inline-block bg-blue-500/10 text-blue-600 dark:text-blue-400 font-extrabold px-3 py-1.5 rounded-full text-xs uppercase";
-                infoMEI.classList.add('hidden');
-                infoNacional.classList.remove('hidden');
-                taxBadge.innerText = "Prog. 4%";
-                taxBadge.className = "text-xs font-bold text-red-500 bg-red-500/10 px-2 py-1 rounded";
-            }
-
-            const isAdm = currentUser.email.toLowerCase() === 'demoadm@dev.com';
-            const settingsBtn = document.getElementById('nav-settings');
-            const mobileSettingsBtn = document.getElementById('mobile-nav-settings');
-
-            if (isAdm) {
-                if (settingsBtn) settingsBtn.classList.remove('hidden');
-                if (mobileSettingsBtn) mobileSettingsBtn.classList.remove('hidden');
-            } else {
-                if (settingsBtn) settingsBtn.classList.add('hidden');
-                if (mobileSettingsBtn) mobileSettingsBtn.classList.add('hidden');
-            }
-
-            updateDashboardMetrics();
-            renderPastasMensais();
-            renderGlobalAudits();
-            switchTab('dashboard');
-        }
-
-        function updateDashboardMetrics() {
-            let totalRevenue = 0;
-            let totalXmlCount = 0;
-            let marginSum = 0;
-            let totalProductsCount = 0;
-            let totalTaxes = 0;
-
-            const isMEI = currentUser.plan.toUpperCase() === 'MEI';
-
-            Object.keys(xmlDatabase).forEach(month => {
-                const list = xmlDatabase[month] || [];
-                list.forEach(xml => {
-                    totalXmlCount++;
-                    xml.items.forEach(p => {
-                        totalProductsCount++;
-                        marginSum += p.margin;
-                        totalRevenue += p.recommendedPrice * p.qty;
-                        
-                        if (!isMEI) {
-                            totalTaxes += (p.recommendedPrice * p.qty) * 0.04;
-                        }
-                    });
-                });
-            });
-
-            if (currentUser.id === 'demo' && totalRevenue === 0) {
-                totalRevenue = 145230.00;
-                totalTaxes = isMEI ? 0 : 5809.20;
-                marginSum = 171.2;
-                totalProductsCount = 4;
-            }
-
-            const avgMargin = totalProductsCount > 0 ? (marginSum / totalProductsCount).toFixed(1) : "0.0";
-
-            document.getElementById('metric-revenue').innerText = `R$ ${totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-            document.getElementById('metric-xml-count').innerText = totalXmlCount;
-            document.getElementById('metric-avg-margin').innerText = `${avgMargin}%`;
-            document.getElementById('metric-taxes').innerText = `R$ ${totalTaxes.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        }
-
-        function switchTab(tabId) {
-            if (tabId === 'settings' && currentUser.email.toLowerCase() !== 'demoadm@dev.com') {
-                const pass = prompt("Acesso restrito. Digite a Senha Mestre de Administrador para configurar links:");
-                if (pass === "1QAZ2WSX" || pass === "1QAZ2WSX0" || pass === "1qaz2wsx") {
-                    showToast("Configurações ADM liberadas!");
-                } else {
-                    showToast("Senha mestre incorreta.", "danger");
-                    return;
-                }
-            }
-
-            const tabs = ['dashboard', 'xml-editor', 'reports', 'settings'];
-            const activeIndex = tabs.indexOf(tabId);
-
-            tabs.forEach((id, index) => {
-                const pane = document.getElementById(`tab-${id}`);
-                const navBtn = document.getElementById(`nav-${id}`);
-                const mobNavBtn = document.getElementById(`mob-nav-${id}`);
-
-                if (index === activeIndex) {
-                    pane.classList.add('active');
-                    pane.classList.remove('inactive-left', 'inactive-right');
-                    if (navBtn) {
-                        navBtn.className = "nav-btn flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold bg-emerald-600 text-white shadow-md transition-all";
-                    }
-                    if (mobNavBtn) {
-                        mobNavBtn.className = "flex flex-col items-center p-2 text-xs font-black text-emerald-600 dark:text-emerald-400 scale-105 transition-all";
-                    }
-                } else {
-                    pane.classList.add(index < activeIndex ? 'inactive-left' : 'inactive-right');
-                    pane.classList.remove('active');
-                    if (navBtn) {
-                        navBtn.className = "nav-btn flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-100 dark:hover:bg-navy-800 text-slate-600 dark:text-slate-300 transition-all";
-                    }
-                    if (mobNavBtn) {
-                        mobNavBtn.className = "flex flex-col items-center p-2 text-xs font-medium text-slate-400 dark:text-slate-500 hover:text-emerald-500 transition-all";
-                    }
-                }
-            });
-
-            currentTab = tabId;
-            closeFolderInspector();
-        }
-
-        function openTabAndCloseDropdown(tabId) {
-            switchTab(tabId);
-            document.getElementById('profile-dropdown').classList.add('hidden');
-        }
-
-        function openProfileNameEdit() {
-            document.getElementById('profile-dropdown').classList.add('hidden');
-            setTimeout(() => {
-                changeNamePrompt();
-            }, 100);
-        }
-
-        function changeNamePrompt() {
-            const newName = prompt("Insira seu nome corporativo de exibição:", currentUser.name);
-            if (newName && newName.trim() !== '') {
-                usersDb = usersDb.map(u => u.id === currentUser.id ? { ...u, name: newName.trim() } : u);
-                localStorage.setItem('fiscal_users_db', JSON.stringify(usersDb));
-                currentUser.name = newName.trim();
-                localStorage.setItem('fiscal_current_user', JSON.stringify(currentUser));
-                showAppShell();
-                showToast("Nome do perfil salvo com sucesso!", "success");
-            }
-        }
-
-        function getMesesDoAno() {
-            return ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-        }
-
-        // RETORNA MÊS ATUAL
-        function getMesAtualNome() {
-            const meses = getMesesDoAno();
-            return meses[new Date().getMonth()];
-        }
-
-        // GERA PASTAS DINÂMICAS ATUALIZADAS PELO MÊS CORRENTE
-        function renderPastasMensais() {
-            const container = document.getElementById('dynamic-folders-container');
-            if (!container) return;
-            container.innerHTML = '';
-
-            const meses = getMesesDoAno();
-            const mesAtualIndex = new Date().getMonth();
-
-            meses.forEach((mes, index) => {
-                if (index <= mesAtualIndex) {
-                    const xmlList = xmlDatabase[mes] || [];
-                    const isMesAtual = mes === getMesAtualNome();
-                    const iconColorClass = isMesAtual ? 'text-emerald-500' : 'text-amber-500';
-                    const bgClass = isMesAtual ? 'bg-emerald-500/5 border-emerald-500/20' : 'border-slate-200 dark:border-slate-800';
-
-                    const div = document.createElement('div');
-                    div.className = `${bgClass} border rounded-2xl p-4 text-center hover:bg-slate-50 dark:hover:bg-navy-950 transition-all cursor-pointer relative shadow-sm`;
-                    div.setAttribute('onclick', `inspectFolder('${mes}')`);
-                    div.innerHTML = `
-                        <i data-lucide="${isMesAtual ? 'folder-open' : 'folder-archive'}" class="w-10 h-10 ${iconColorClass} mx-auto mb-2"></i>
-                        <span class="text-xs font-bold block text-slate-700 dark:text-slate-200">${String(index + 1).padStart(2, '0')} - ${mes}</span>
-                        <span class="text-[10px] text-slate-400 mt-0.5 block">${xmlList.length} Nota(s) XML</span>
-                    `;
-                    container.appendChild(div);
-                }
-            });
-            lucide.createIcons();
-        }
-
-        function inspectFolder(month) {
-            document.getElementById('inspected-folder-title').innerText = month;
-            const xmlList = xmlDatabase[month] || [];
-
-            const listContainer = document.getElementById('folder-xml-list');
-            listContainer.innerHTML = '';
-
-            if (xmlList.length === 0) {
-                document.getElementById('folder-empty-notice').classList.remove('hidden');
-            } else {
-                document.getElementById('folder-empty-notice').classList.add('hidden');
-                
-                xmlList.forEach((xml, i) => {
-                    const itemDiv = document.createElement('div');
-                    itemDiv.className = "py-3 flex justify-between items-center text-xs";
-                    itemDiv.innerHTML = `
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center">
-                                <i data-lucide="file-text" class="w-4 h-4"></i>
-                            </div>
-                            <div>
-                                <h5 class="font-bold text-slate-800 dark:text-white">${xml.name}</h5>
-                                <p class="text-slate-400 text-[10px]">Data Envio: ${xml.date} • Custo: R$ ${xml.cost.toFixed(2)}</p>
-                            </div>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="loadXmlFromHistory('${month}', ${i})" class="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold py-1.5 px-2.5 rounded-lg transition-all">Re-abrir no Editor</button>
-                            <button onclick="deleteXmlFromHistory('${month}', ${i})" class="text-red-500 hover:text-red-700 p-1.5"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                        </div>
-                    `;
-                    listContainer.appendChild(itemDiv);
-                });
-            }
-
-            document.getElementById('folder-inspector-panel').classList.remove('hidden');
-            document.getElementById('folder-inspector-panel').scrollIntoView({ behavior: 'smooth' });
-            lucide.createIcons();
-        }
-
-        function closeFolderInspector() {
-            const panel = document.getElementById('folder-inspector-panel');
-            if (panel) panel.classList.add('hidden');
-        }
-
-        function loadXmlFromHistory(month, index) {
-            const xml = xmlDatabase[month][index];
-            currentXmlProducts = xml.items.map((item, i) => ({
-                id: i,
-                code: `COD-${i}`,
-                name: item.name,
-                qty: item.qty,
-                cost: item.cost,
-                total: item.cost * item.qty,
-                margin: item.margin,
-                shipping: 5,
-                icms: 12,
-                recommendedPrice: item.recommendedPrice
-            }));
-            
-            setupWorkspace();
-            switchTab('xml-editor');
-            showToast(`XML carregado no editor!`);
-        }
-
-        function deleteXmlFromHistory(month, index) {
-            if (confirm("Deseja realmente remover esta nota fiscal da pasta?")) {
-                xmlDatabase[month].splice(index, 1);
-                const userDbKey = `xml_db_${currentUser.id}`;
-                localStorage.setItem(userDbKey, JSON.stringify(xmlDatabase));
-                
-                showToast("XML removido com sucesso!", "success");
-                inspectFolder(month);
-                renderPastasMensais();
-                updateDashboardMetrics();
-                renderGlobalAudits();
-            }
-        }
-
-        function renderGlobalAudits() {
-            const listContainer = document.getElementById('global-audits-list');
-            if (!listContainer) return;
-            listContainer.innerHTML = '';
-
-            let hasAudits = false;
-
-            Object.keys(xmlDatabase).forEach(month => {
-                const list = xmlDatabase[month] || [];
-                list.forEach(xml => {
-                    hasAudits = true;
-                    const div = document.createElement('div');
-                    div.className = "py-4 flex justify-between items-center text-xs";
-                    div.innerHTML = `
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center">
-                                <i data-lucide="check" class="w-4 h-4"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold">${xml.name}</h4>
-                                <p class="text-slate-400">XML Arquivado em ${month} • Contendo ${xml.count} produto(s)</p>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <span class="font-bold text-slate-700 dark:text-slate-200">${month}, 2026</span>
-                            <p class="text-slate-400 text-[10px]">${xml.date}</p>
-                        </div>
-                    `;
-                    listContainer.appendChild(div);
-                });
-            });
-
-            if (!hasAudits) {
-                listContainer.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Nenhum envio registrado até o momento.</p>`;
-            }
-            lucide.createIcons();
-        }
-
-        function saveToCurrentMonthFolder() {
-            if (currentXmlProducts.length === 0) {
-                showToast("Não há produtos processados para guardar.", "danger");
-                return;
-            }
-
-            const mesCorrente = getMesAtualNome();
-            if (!xmlDatabase[mesCorrente]) {
-                xmlDatabase[mesCorrente] = [];
-            }
-
-            const totalCost = currentXmlProducts.reduce((sum, p) => sum + p.total, 0);
-            const todayStr = new Date().toLocaleDateString('pt-BR');
-
-            const newXmlRecord = {
-                id: `xml_${Date.now()}`,
-                name: `NFe_Nacional_${Date.now().toString().slice(-6)}.xml`,
-                date: todayStr,
-                cost: totalCost,
-                count: currentXmlProducts.length,
-                items: currentXmlProducts.map(p => ({
-                    name: p.name,
-                    qty: p.qty,
-                    cost: p.cost,
-                    margin: p.margin,
-                    recommendedPrice: p.recommendedPrice
-                }))
-            };
-
-            xmlDatabase[mesCorrente].push(newXmlRecord);
-            
-            const userDbKey = `xml_db_${currentUser.id}`;
-            localStorage.setItem(userDbKey, JSON.stringify(xmlDatabase));
-
-            showToast("XML guardado na pasta de " + mesCorrente + "!", "success");
-            updateDashboardMetrics();
-            renderPastasMensais();
-            renderGlobalAudits();
-            
-            const clientDriveLink = localStorage.getItem('cfg_client_drive_link');
-            if (clientDriveLink) {
-                setTimeout(() => {
-                    showToast("Drive Privado: XML enviado com sucesso ao seu Google Drive individual!");
-                }, 1200);
-            }
-        }
-
-        function handleXmlUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                parseNFeXml(e.target.result);
-            };
+            reader.onload = (evt) => parseXML(evt.target.result);
             reader.readAsText(file);
-        }
+        });
 
-        function parseNFeXml(xmlText) {
-            try {
-                const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-                const items = xmlDoc.getElementsByTagName("det");
+        function parseXML(xmlText) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+            const xmlItems = xmlDoc.getElementsByTagName('det');
+            
+            produtos = []; resultados = []; indexAtual = 0;
+
+            for (let i = 0; i < xmlItems.length; i++) {
+                const prod = xmlItems[i].getElementsByTagName('prod')[0];
+                if (prod) {
+                    produtos.push({
+                        id: i,
+                        nome: prod.getElementsByTagName('xProd')[0]?.textContent || "Produto sem descrição",
+                        ncm: prod.getElementsByTagName('NCM')[0]?.textContent || "00000000",
+                        custo: parseFloat(prod.getElementsByTagName('vUnCom')[0]?.textContent || 0)
+                    });
+                }
+            }
+
+            if (produtos.length > 0) {
+                uploadZone.classList.add('hidden');
+                dashboard.classList.remove('hidden');
+                document.getElementById('analysis-card').classList.remove('hidden');
+                document.getElementById('export-card').classList.add('hidden');
                 
-                if (items.length === 0) {
-                    showToast("Formato de XML incompatível ou sem tags de itens.", "danger");
-                    return;
-                }
-
-                currentXmlProducts = [];
-                for (let i = 0; i < items.length; i++) {
-                    const det = items[i];
-                    const prod = det.getElementsByTagName("prod")[0];
-                    if (prod) {
-                        const code = prod.getElementsByTagName("cProd")[0]?.textContent || `COD-${i}`;
-                        const name = prod.getElementsByTagName("xProd")[0]?.textContent || "Produto Sem Nome";
-                        const qty = parseFloat(prod.getElementsByTagName("qCom")[0]?.textContent || "1");
-                        const unitValue = parseFloat(prod.getElementsByTagName("vUnCom")[0]?.textContent || "0");
-                        const totalValue = parseFloat(prod.getElementsByTagName("vProd")[0]?.textContent || "0");
-
-                        currentXmlProducts.push({
-                            id: i,
-                            code,
-                            name,
-                            qty,
-                            cost: unitValue,
-                            total: totalValue,
-                            margin: 40,
-                            shipping: 5,
-                            icms: 12,
-                            recommendedPrice: unitValue * 1.4
-                        });
-                    }
-                }
-
-                setupWorkspace();
-                showToast("NFe carregada com sucesso!", "success");
-            } catch (err) {
-                showToast("Erro ao processar o arquivo XML.", "danger");
+                produtos.forEach((p, idx) => { executeMathForIndex(idx, 5, 12, 50); });
+                renderSidebar();
+                loadProduct(0);
+            } else {
+                alert("Nenhum item válido encontrado na raiz estrutural do XML.");
             }
         }
 
-        function loadDemoXML() {
-            currentXmlProducts = [
-                { id: 0, code: "PRD001", name: "Cabo de Rede Cat6 Premium 10m", qty: 15, cost: 45.00, total: 675.00, margin: 40, shipping: 5, icms: 12 },
-                { id: 1, code: "PRD002", name: "Roteador Wireless Gigabyte AC1200", qty: 5, cost: 185.00, total: 925.00, margin: 45, shipping: 5, icms: 12 },
-                { id: 2, code: "PRD003", name: "Switch Gigabit Ethernet 8 Portas Metal", qty: 8, cost: 120.00, total: 960.00, margin: 35, shipping: 5, icms: 12 },
-                { id: 3, code: "PRD004", name: "Conector RJ45 blindado EZ-Crimp (Pote c/ 50)", qty: 20, cost: 35.00, total: 700.00, margin: 50, shipping: 5, icms: 12 }
-            ];
-            setupWorkspace();
-            showToast("Nota de demonstração carregada!", "success");
+        function resetFlow() {
+            produtos = []; resultados = []; indexAtual = 0; currentXmlName = ""; xmlInput.value = "";
+            uploadZone.classList.remove('hidden');
+            dashboard.classList.add('hidden');
         }
 
-        function setupWorkspace() {
-            document.getElementById('editor-workspace').classList.remove('hidden');
-            document.getElementById('demo-notice').classList.add('hidden');
-            renderItemsList();
-            setActiveProduct(0);
-        }
-
-        function renderItemsList() {
-            const listContainer = document.getElementById('xml-items-list');
-            listContainer.innerHTML = '';
-            document.getElementById('xml-item-counter').innerText = `${currentXmlProducts.length} produtos carregados`;
-
-            currentXmlProducts.forEach((item, index) => {
-                const isActive = index === activeProductIndex;
-                const div = document.createElement('div');
-                div.className = `p-4 cursor-pointer transition-all border-l-4 text-xs ${
-                    isActive ? 'bg-emerald-500/10 border-emerald-500 font-bold' : 'hover:bg-slate-50 dark:hover:bg-navy-950 border-transparent text-slate-600 dark:text-slate-400'
-                }`;
-                div.setAttribute('onclick', `setActiveProduct(${index})`);
-                div.innerHTML = `
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="truncate max-w-[150px] font-bold text-slate-800 dark:text-white">${item.name}</span>
-                        <span class="text-emerald-600 dark:text-emerald-400 font-extrabold">R$ ${item.cost.toFixed(2)}</span>
-                    </div>
-                    <div class="flex justify-between items-center text-[10px]">
-                        <span>Qtd: ${item.qty}</span>
-                        <span class="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-md">Margem: ${item.margin}%</span>
+        function renderSidebar() {
+            productList.innerHTML = '';
+            produtos.forEach((prod, idx) => {
+                const isSelected = idx === indexAtual;
+                const item = document.createElement('div');
+                item.className = `p-3 flex items-center justify-between cursor-pointer border-l-4 transition-all ${isSelected ? 'bg-slate-900/60 border-emerald-500' : 'border-transparent hover:bg-slate-900/20'}`;
+                
+                // CLIQUE COMPLETAMENTE LIVRE (REQUISITO MANTIDO)
+                item.onclick = () => { loadProduct(idx); };
+                
+                item.innerHTML = `
+                    <div class="truncate pr-2 text-left">
+                        <p class="text-xs sm:text-sm font-medium ${isSelected ? 'text-emerald-400 font-bold' : 'text-slate-300'} truncate">${prod.nome}</p>
+                        <span class="text-[11px] text-slate-500 font-mono">NCM: ${prod.ncm}</span>
                     </div>
                 `;
-                listContainer.appendChild(div);
+                productList.appendChild(item);
+            });
+            document.getElementById('progress-text').innerText = `${resultados.filter(r => r).length}/${produtos.length}`;
+        }
+
+        function loadProduct(idx) {
+            indexAtual = idx;
+            const prod = produtos[idx];
+            
+            document.getElementById('view-title').innerText = prod.nome;
+            document.getElementById('view-ncm').innerText = `NCM: ${prod.ncm}`;
+            document.getElementById('view-cost').innerText = formatBRL(prod.custo);
+            
+            if(resultados[idx]) {
+                marginInput.value = resultados[idx]["_margem"];
+                freightInput.value = resultados[idx]["_frete"];
+                icmsInInput.value = resultados[idx]["_icmsIn"];
+            }
+            calculatePrices();
+            renderSidebar();
+        }
+
+        function calculatePrices() {
+            const prod = produtos[indexAtual];
+            const pctFreight = parseFloat(freightInput.value) || 0;
+            const pctIcmsIn = parseFloat(icmsInInput.value) || 0;
+            const margem = parseFloat(marginInput.value) || 0;
+
+            const res = executeMathForIndex(indexAtual, pctFreight, pctIcmsIn, margem);
+            const currentRegime = selectRegime.value;
+
+            ['mei', 'simples', 'presumido', 'real'].forEach(r => {
+                const card = document.getElementById(`card-${r}`);
+                if (currentRegime === 'comparativo' || currentRegime === r) {
+                    card.classList.remove('hidden');
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+
+            document.getElementById('calc-mei-ceff').innerText = formatBRL(res.cEff);
+            document.getElementById('total-mei').innerText = formatBRL(res.pMei);
+
+            document.getElementById('calc-simples-ceff').innerText = formatBRL(res.cEff);
+            document.getElementById('calc-simples-das').innerText = formatBRL(res.pSimples * TAX_RULES.simples.saida);
+            document.getElementById('total-simples').innerText = formatBRL(res.pSimples);
+
+            const cargaPres = TAX_RULES.icmsOut + TAX_RULES.presumido.pisCofins + TAX_RULES.presumido.irpjCsll;
+            document.getElementById('calc-pres-ceff').innerText = formatBRL(res.cEff);
+            document.getElementById('calc-pres-taxes').innerText = formatBRL(res.pPres * cargaPres);
+            document.getElementById('total-presumido').innerText = formatBRL(res.pPres);
+
+            const cargaReal = TAX_RULES.icmsOut + TAX_RULES.real.pisCofins + TAX_RULES.real.irpjCsll;
+            document.getElementById('calc-real-ceff').innerText = formatBRL(res.cEff);
+            document.getElementById('calc-real-taxes').innerText = formatBRL(res.pReal * cargaReal);
+            document.getElementById('total-real').innerText = formatBRL(res.pReal);
+        }
+
+        function executeMathForIndex(idx, f, i, m) {
+            const prod = produtos[idx];
+            const cEff = prod.custo + (prod.custo * (f/100)) + (prod.custo * (i/100));
+            const mFactor = m / 100;
+
+            const pMei = cEff / (1 - TAX_RULES.mei.saida - mFactor);
+            const pSimples = cEff / (1 - TAX_RULES.simples.saida - mFactor);
+            const pPres = cEff / (1 - (TAX_RULES.icmsOut + TAX_RULES.presumido.pisCofins + TAX_RULES.presumido.irpjCsll) - mFactor);
+            const pReal = cEff / (1 - (TAX_RULES.icmsOut + TAX_RULES.real.pisCofins + TAX_RULES.real.irpjCsll) - mFactor);
+
+            resultados[idx] = {
+                "Produto": prod.nome,
+                "NCM": prod.ncm,
+                "Custo Inicial Fabrica (R$)": prod.custo.toFixed(2),
+                "Frete Adicionado (%)": f,
+                "ICMS Entrada (%)": i,
+                "Custo Real Efetivo (R$)": cEff.toFixed(2),
+                "Margem (%)": m,
+                "Preco Sugerido MEI (R$)": pMei.toFixed(2),
+                "Preco Sugerido Simples (R$)": pSimples.toFixed(2),
+                "Preco Sugerido Presumido (R$)": pPres.toFixed(2),
+                "Preco Sugerido Real (R$)": pReal.toFixed(2),
+                "_frete": f, "_icmsIn": i, "_margem": m,
+                cEff, pMei, pSimples, pPres, pReal
+            };
+            return resultados[idx];
+        }
+
+        [marginInput, freightInput, icmsInInput].forEach(inp => inp.addEventListener('input', calculatePrices));
+
+        btnNext.addEventListener('click', () => {
+            if(indexAtual + 1 < produtos.length) {
+                loadProduct(indexAtual + 1);
+            } else {
+                showExportScreen();
+            }
+        });
+
+        function showExportScreen() {
+            document.getElementById('analysis-card').classList.add('hidden');
+            document.getElementById('export-card').classList.remove('hidden');
+            salvarNoHistorico(currentXmlName, produtos.length, resultados);
+        }
+
+        function formatBRL(val) {
+            return `R$ ${(val || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+
+        function salvarNoHistorico(nome, itens, dadosLote) {
+            let hist = JSON.parse(localStorage.getItem('gf_lote_history_v5') || '[]');
+            hist.unshift({ data: new Date().toLocaleString('pt-BR'), nome: nome, itens: itens, dados: dadosLote });
+            localStorage.setItem('gf_lote_history_v5', JSON.stringify(hist));
+        }
+
+        function renderHistorico() {
+            const body = document.getElementById('history-table-body');
+            let hist = JSON.parse(localStorage.getItem('gf_lote_history_v5') || '[]');
+            if(hist.length === 0) {
+                body.innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-slate-500 font-mono text-xs">Nenhum lote processado neste dispositivo.</td></tr>`;
+                return;
+            }
+            body.innerHTML = '';
+            hist.forEach((h, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-900/40 transition-colors border-b border-slate-800";
+                tr.innerHTML = `
+                    <td class="px-4 sm:px-6 py-4 font-mono text-[11px] text-slate-400 whitespace-nowrap">${h.data.split(' ')[0]}</td>
+                    <td class="px-4 sm:px-6 py-4 text-white font-semibold truncate max-w-[120px] sm:max-w-xs">${h.nome}</td>
+                    <td class="px-4 sm:px-6 py-4 text-emerald-400 font-mono text-xs">${h.itens} un</td>
+                    <td class="px-4 sm:px-6 py-4 text-center">
+                        <button onclick="printLoteHistorico(${index})" class="bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-400 border border-emerald-500/20 text-[11px] font-bold px-2 py-1 rounded transition-all shadow-sm">
+                            Imprimir
+                        </button>
+                    </td>
+                `;
+                body.appendChild(tr);
             });
         }
 
-        function setActiveProduct(index) {
-            if (index < 0 || index >= currentXmlProducts.length) return;
-            activeProductIndex = index;
-            renderItemsList();
-
-            const p = currentXmlProducts[index];
-            document.getElementById('active-item-title').innerText = p.name;
-            document.getElementById('active-item-code').innerText = p.code;
-            document.getElementById('active-item-qty').innerText = p.qty;
-            document.getElementById('active-item-cost').innerText = `R$ ${p.cost.toFixed(2)}`;
-            document.getElementById('active-item-total').innerText = `R$ ${p.total.toFixed(2)}`;
-
-            document.getElementById('input-margin-range').value = p.margin;
-            document.getElementById('input-shipping-cost').value = p.shipping;
-            document.getElementById('input-icms-rate').value = p.icms;
-
-            calculateActiveItemPrices();
-        }
-
-        // SISTEMA DE CÁLCULO DE CALCULADORA (DETALHADO MATEMÁTICAMENTE)
-        function calculateActiveItemPrices() {
-            if (activeProductIndex === -1) return;
-
-            const margin = parseFloat(document.getElementById('input-margin-range').value) || 0;
-            const shipping = parseFloat(document.getElementById('input-shipping-cost').value) || 0;
-            const icms = parseFloat(document.getElementById('input-icms-rate').value) || 0;
-
-            document.getElementById('range-margin-val').innerText = `${margin}%`;
-
-            const item = currentXmlProducts[activeProductIndex];
-            const baseCost = item.cost;
-            const additionalExpenses = baseCost * (shipping / 100);
-            const icmsTaxes = baseCost * (icms / 100);
+        function triggerPrintEngine(fileName, dateStr, dataset) {
+            const regimeConfigurado = selectRegime.value;
+            const textRegime = selectRegime.options[selectRegime.selectedIndex].text;
             
-            // Custo real acumulado
-            const effectiveCost = baseCost + additionalExpenses + icmsTaxes;
-            
-            // Preço final com Markup
-            const recommendedPrice = effectiveCost * (1 + (margin / 100));
+            document.getElementById('print-meta-regime').innerText = textRegime;
+            document.getElementById('print-meta-file').innerText = fileName;
+            document.getElementById('print-meta-date').innerText = `Emissão: ${dateStr}`;
 
-            // Adaptação Fiscal Dinâmica
-            const isMEI = currentUser.plan.toUpperCase() === 'MEI';
-            const taxOutRate = isMEI ? 0 : 4; // 0% MEI vs 4% Simples Nacional
-            const taxOutValue = recommendedPrice * (taxOutRate / 100);
-
-            // Popula Resumo Financeiro Simples
-            document.getElementById('summary-base-cost').innerText = `R$ ${baseCost.toFixed(2)}`;
-            document.getElementById('summary-expenses').innerText = `R$ ${additionalExpenses.toFixed(2)}`;
-            document.getElementById('summary-taxes').innerText = `R$ ${icmsTaxes.toFixed(2)}`;
-            document.getElementById('summary-recommended-price').innerText = `R$ ${recommendedPrice.toFixed(2)}`;
-
-            // Popula Painel Detalhado de Cálculo
-            document.getElementById('calc-cu').innerText = `R$ ${baseCost.toFixed(2)}`;
-            document.getElementById('calc-dop').innerText = `R$ ${additionalExpenses.toFixed(2)} (${shipping}%)`;
-            document.getElementById('calc-iicms').innerText = `R$ ${icmsTaxes.toFixed(2)} (${icms}%)`;
-            document.getElementById('calc-ceff').innerText = `R$ ${effectiveCost.toFixed(2)}`;
-            
-            document.getElementById('calc-margin').innerText = `${margin}%`;
-            document.getElementById('calc-tax-out-rate').innerText = `${taxOutRate}%`;
-            document.getElementById('calc-tax-out-value').innerText = `R$ ${taxOutValue.toFixed(2)}`;
-            document.getElementById('calc-pvenda').innerText = `R$ ${recommendedPrice.toFixed(2)}`;
-        }
-
-        function saveActiveItemConfig() {
-            if (activeProductIndex === -1) return;
-
-            const margin = parseFloat(document.getElementById('input-margin-range').value) || 0;
-            const shipping = parseFloat(document.getElementById('input-shipping-cost').value) || 0;
-            const icms = parseFloat(document.getElementById('input-icms-rate').value) || 0;
-
-            const baseCost = currentXmlProducts[activeProductIndex].cost;
-            const additionalExpenses = baseCost * (shipping / 100);
-            const icmsTaxes = baseCost * (icms / 100);
-            const recommendedPrice = (baseCost + additionalExpenses + icmsTaxes) * (1 + (margin / 100));
-
-            currentXmlProducts[activeProductIndex].margin = margin;
-            currentXmlProducts[activeProductIndex].shipping = shipping;
-            currentXmlProducts[activeProductIndex].icms = icms;
-            currentXmlProducts[activeProductIndex].recommendedPrice = recommendedPrice;
-
-            updateAverageMarginDashboard();
-            showToast("Preço do produto recalculado!", "success");
-            renderItemsList();
-        }
-
-        function updateAverageMarginDashboard() {
-            if (currentXmlProducts.length === 0) return;
-            const sumMargins = currentXmlProducts.reduce((acc, p) => acc + p.margin, 0);
-            const avg = (sumMargins / currentXmlProducts.length).toFixed(1);
-            document.getElementById('metric-avg-margin').innerText = `${avg}%`;
-        }
-
-        function navigateItem(direction) {
-            if (direction === 'next') {
-                if (activeProductIndex < currentXmlProducts.length - 1) {
-                    setActiveProduct(activeProductIndex + 1);
-                } else {
-                    showToast("Você já está no último produto da nota.");
-                }
-            } else if (direction === 'prev') {
-                if (activeProductIndex > 0) {
-                    setActiveProduct(activeProductIndex - 1);
-                } else {
-                    showToast("Você já está no primeiro produto da nota.");
-                }
-            }
-        }
-
-        function simulateExport(type) {
-            if (currentXmlProducts.length === 0) {
-                showToast("Não há itens processados para exportação.", "danger");
-                return;
-            }
-
-            if (type === 'csv') {
-                let csvContent = "data:text/csv;charset=utf-8,";
-                csvContent += "Codigo;Produto;Qtd;Custo;Margem;PrecoVenda\n";
-                
-                currentXmlProducts.forEach(p => {
-                    csvContent += `${p.code};${p.name};${p.qty};${p.cost};${p.margin}%;${p.recommendedPrice.toFixed(2)}\n`;
-                });
-
-                const encodedUri = encodeURI(csvContent);
-                const link = document.createElement("a");
-                link.setAttribute("href", encodedUri);
-                link.setAttribute("download", `Relatorio_Calculo_NFe_${Date.now()}.csv`);
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-
-                showToast("Planilha de exportação gerada!", "success");
-            }
-        }
-
-        function promptAdminPassword() {
-            const pass = prompt("Insira a Senha Mestre de Administrador:");
-            if (pass === "1QAZ2WSX" || pass === "1QAZ2WSX0" || pass === "1qaz2wsx") {
-                toggleAdminModal(true);
-            } else if (pass !== null) {
-                showToast("Acesso administrativo recusado.", "danger");
-            }
-        }
-
-        function toggleAdminModal(show) {
-            const modal = document.getElementById('admin-modal');
-            if (show) {
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-                renderUserRows();
-            } else {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-            }
-        }
-
-        function renderUserRows() {
-            const tbody = document.getElementById('user-rows');
-            if (!tbody) return;
+            const tbody = document.getElementById('lote-print-table-body');
             tbody.innerHTML = '';
 
-            usersDb.forEach((user) => {
+            dataset.forEach(item => {
+                let precoVendaFinalStr = "R$ 0,00";
+
+                if (regimeConfigurado === 'mei') precoVendaFinalStr = formatBRL(item.pMei || parseFloat(item["Preco Sugerido MEI (R$)"]));
+                else if (regimeConfigurado === 'simples') precoVendaFinalStr = formatBRL(item.pSimples || parseFloat(item["Preco Sugerido Simples (R$)"]));
+                else if (regimeConfigurado === 'presumido') precoVendaFinalStr = formatBRL(item.pPres || parseFloat(item["Preco Sugerido Presumido (R$)"]));
+                else if (regimeConfigurado === 'real') precoVendaFinalStr = formatBRL(item.pReal || parseFloat(item["Preco Sugerido Real (R$)"]));
+                else {
+                    precoVendaFinalStr = formatBRL(item.pSimples || parseFloat(item["Preco Sugerido Simples (R$)"]));
+                }
+
                 const tr = document.createElement('tr');
-                tr.className = "border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-navy-900";
                 tr.innerHTML = `
-                    <td class="p-3"><input type="text" class="bg-transparent font-medium border-b border-transparent focus:border-emerald-500 focus:outline-none py-1 w-full" value="${user.name}" onchange="updateUserField('${user.id}', 'name', this.value)"></td>
-                    <td class="p-3"><input type="text" class="bg-transparent font-mono border-b border-transparent focus:border-emerald-500 focus:outline-none py-1 w-full" value="${user.cnpj || ''}" onchange="updateUserField('${user.id}', 'cnpj', this.value)"></td>
-                    <td class="p-3"><input type="email" class="bg-transparent border-b border-transparent focus:border-emerald-500 focus:outline-none py-1 w-full" value="${user.email}" onchange="updateUserField('${user.id}', 'email', this.value)"></td>
-                    <td class="p-3"><input type="text" class="bg-transparent border-b border-transparent focus:border-emerald-500 focus:outline-none py-1 w-full" value="${user.password}" onchange="updateUserField('${user.id}', 'password', this.value)"></td>
-                    <td class="p-3"><input type="text" class="bg-transparent font-mono text-emerald-600 dark:text-emerald-400 border-b border-transparent focus:border-emerald-500 focus:outline-none py-1 w-full" value="${user.licenseCode || ''}" onchange="updateUserField('${user.id}', 'licenseCode', this.value)"></td>
-                    <td class="p-3">
-                        <select class="bg-transparent py-1 border border-transparent focus:border-emerald-500" onchange="updateUserField('${user.id}', 'plan', this.value)">
-                            <option value="MEI" ${user.plan === 'MEI' ? 'selected' : ''}>MEI</option>
-                            <option value="Nacional" ${user.plan === 'Nacional' ? 'selected' : ''}>Nacional</option>
-                        </select>
-                    </td>
-                    <td class="p-3 text-center">
-                        <button onclick="deleteUser('${user.id}')" class="text-red-600 hover:text-red-800"><i data-lucide="trash-2" class="w-4 h-4 mx-auto"></i></button>
-                    </td>
+                    <td><strong>${item.Produto}</strong></td>
+                    <td class="font-mono">${item.NCM}</td>
+                    <td class="font-mono">R$ ${parseFloat(item["Custo Inicial Fabrica (R$)"]).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td class="font-mono">R$ ${parseFloat(item["Custo Real Efetivo (R$)"]).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td class="font-mono">${item["Margem (%)"]}%</td>
+                    <td class="font-mono" style="font-weight: 800;">${precoVendaFinalStr}</td>
+                    <td style="border-left: 2px dashed #000000;"></td>
                 `;
                 tbody.appendChild(tr);
             });
-            lucide.createIcons();
+            window.print();
         }
 
-        function updateUserField(userId, field, val) {
-            usersDb = usersDb.map(u => u.id === userId ? { ...u, [field]: val } : u);
+        function printLoteCompletoAtual() {
+            if (produtos.length === 0) return;
+            triggerPrintEngine(currentXmlName, new Date().toLocaleString('pt-BR'), resultados);
         }
 
-        function toggleUserStatus(userId) {
-            usersDb = usersDb.map(u => u.id === userId ? { ...u, active: !u.active } : u);
-            renderUserRows();
-            showToast("Status de acesso do usuário alterado!");
+        function printLoteHistorico(index) {
+            let hist = JSON.parse(localStorage.getItem('gf_lote_history_v5') || '[]');
+            const lote = hist[index];
+            if (lote && lote.dados) { triggerPrintEngine(lote.nome, lote.data, lote.dados); }
         }
 
-        function addUserRow() {
-            const newId = String(usersDb.length + 1);
-            usersDb.push({
-                id: newId,
-                name: "Novo Assinante Ltda",
-                cnpj: "00.000.000/0001-00",
-                email: `cliente${newId}@provedor.com`,
-                password: "123",
-                licenseCode: `LIC-NEW-${Date.now().toString().slice(-4)}`,
-                plan: "MEI",
-                active: true
-            });
-            renderUserRows();
-        }
-
-        function deleteUser(userId) {
-            const user = usersDb.find(u => u.id === userId);
-            if (user && user.email.toLowerCase() === 'demoadm@dev.com') {
-                showToast("Não é possível remover a conta Master do Administrador!", "danger");
-                return;
-            }
-            usersDb = usersDb.filter(u => u.id !== userId);
-            renderUserRows();
-            showToast("Usuário excluído da planilha.", "danger");
-        }
-
-        function saveAdminData() {
-            localStorage.setItem('fiscal_users_db', JSON.stringify(usersDb));
-            showToast("Configurações de assinantes aplicadas com sucesso!", "success");
-            toggleAdminModal(false);
-            initSession(); 
-        }
-
-        function toggleDarkMode() {
-            const isDark = document.documentElement.classList.toggle('dark');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-            showToast(`Tema ${isDark ? 'Escuro' : 'Claro'} ativado.`, "info");
-        }
-
-        function toggleProfileDropdown() {
-            const dropdown = document.getElementById('profile-dropdown');
-            if (dropdown) dropdown.classList.toggle('hidden');
-        }
+        btnExport.addEventListener('click', () => {
+            const headers = ["Produto", "NCM", "Custo Inicial Fabrica (R$)", "Frete Adicionado (%)", "ICMS Entrada (%)", "Custo Real Efetivo (R$)", "Margem (%)", "Preco Sugerido MEI (R$)", "Preco Sugerido Simples (R$)", "Preco Sugerido Presumido (R$)", "Preco Sugerido Real (R$)"];
+            let csvContent = "\uFEFF"; csvContent += headers.join(";") + "\n";
+            resultados.forEach(row => { csvContent += headers.map(header => `"${row[header]}"`).join(";") + "\n"; });
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `auditoria_gestorfiscal_${currentXmlName.replace('.xml', '')}.csv`);
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        });
     </script>
 </body>
 </html>
