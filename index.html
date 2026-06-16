@@ -1,1431 +1,1234 @@
 <!DOCTYPE html>
 <html lang="pt-BR" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GESTORFISCAL — Triagem e Precificação Tributária 2026</title>
-
-    <!-- Supabase JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: { extend: { colors: { navy: { 900: '#0f172a', 950: '#020617' } } } }
-        };
-        // Anti-FOUC
-        if (localStorage.getItem('gf_theme') === 'light') document.documentElement.classList.remove('dark');
-        else document.documentElement.classList.add('dark');
-    </script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
-
-    <style>
-        * { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
-
-        /* ── 3D TAB TRANSITIONS ── */
-        .tab-container { perspective: 1500px; position: relative; }
-        .tab-pane {
-            transition: transform 0.45s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.35s ease-out;
-            transform-style: preserve-3d; backface-visibility: hidden; width: 100%;
-        }
-        .tab-pane.active   { opacity:1; transform:translate3d(0,0,0) rotateY(0deg); pointer-events:auto; position:relative; z-index:10; }
-        .tab-pane.left     { opacity:0; transform:translate3d(-100%,0,-150px) rotateY(20deg);  pointer-events:none; position:absolute; top:0; left:0; z-index:1; height:0; overflow:hidden; }
-        .tab-pane.right    { opacity:0; transform:translate3d(100%,0,-150px)  rotateY(-20deg); pointer-events:none; position:absolute; top:0; left:0; z-index:1; height:0; overflow:hidden; }
-
-        /* ── SCROLLBAR ── */
-        ::-webkit-scrollbar { width:5px; height:5px; }
-        ::-webkit-scrollbar-track { background:transparent; }
-        ::-webkit-scrollbar-thumb { background:#10b981; border-radius:4px; }
-
-        /* ── ANIMATIONS ── */
-        @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
-        .anim-up { animation: fadeUp 0.4s cubic-bezier(0.16,1,0.3,1) forwards; }
-        @keyframes shimmer { 0%,100% { opacity:1; } 50% { opacity:.5; } }
-        .pulse-dot { animation: shimmer 2s infinite; }
-
-        /* ── RANGE INPUT ── */
-        input[type=range] { accent-color:#10b981; }
-
-        /* ── PRINT STYLES ── */
-        @media print {
-            html,body { background:white !important; color:black !important; height:auto !important; }
-            body { padding:0 !important; margin:0 !important; display:block !important; }
-            main, header, nav, #toast-container, #login-screen, .no-print { display:none !important; }
-            #print-document { display:block !important; }
-            #print-document * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        }
-
-        /* ── TOOLTIP ── */
-        .tooltip-wrap { position:relative; }
-        .tooltip-box {
-            opacity:0; visibility:hidden; transform:translateX(-50%) translateY(8px);
-            transition:all 0.2s ease; position:absolute; left:50%; bottom:110%;
-            width:220px; z-index:50; pointer-events:none;
-        }
-        .tooltip-wrap:hover .tooltip-box { opacity:1; visibility:visible; transform:translateX(-50%) translateY(0); }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>GESTORFISCAL — Triagem e Precificação Tributária 2026</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { darkMode:'class', theme:{ extend:{ colors:{ navy:{ 900:'#0f172a', 950:'#020617' } } } } };
+if (localStorage.getItem('gf_theme') === 'light') document.documentElement.classList.remove('dark');
+else document.documentElement.classList.add('dark');
+</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<style>
+* { font-family:'Plus Jakarta Sans',sans-serif; -webkit-tap-highlight-color:transparent; }
+.tab-container { perspective:1500px; position:relative; }
+.tab-pane { transition:transform 0.45s cubic-bezier(0.25,1,0.5,1), opacity 0.35s ease-out; transform-style:preserve-3d; backface-visibility:hidden; width:100%; }
+.tab-pane.active { opacity:1; transform:translate3d(0,0,0) rotateY(0deg); pointer-events:auto; position:relative; z-index:10; }
+.tab-pane.left  { opacity:0; transform:translate3d(-100%,0,-150px) rotateY(20deg);  pointer-events:none; position:absolute; top:0; left:0; z-index:1; height:0; overflow:hidden; }
+.tab-pane.right { opacity:0; transform:translate3d(100%,0,-150px) rotateY(-20deg); pointer-events:none; position:absolute; top:0; left:0; z-index:1; height:0; overflow:hidden; }
+::-webkit-scrollbar { width:5px; height:5px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:#10b981; border-radius:4px; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);} }
+.anim-up { animation:fadeUp 0.4s cubic-bezier(0.16,1,0.3,1) forwards; }
+@keyframes shimmer { 0%,100%{opacity:1;}50%{opacity:.5;} }
+.pulse-dot { animation:shimmer 2s infinite; }
+@keyframes spin { to{transform:rotate(360deg);} }
+.spinner { animation:spin 0.8s linear infinite; }
+@keyframes slideIn { from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;} }
+@keyframes slideOut { from{transform:translateX(0);opacity:1;}to{transform:translateX(100%);opacity:0;} }
+input[type=range] { accent-color:#10b981; }
+@media print {
+  html,body { background:white!important; color:black!important; height:auto!important; }
+  body { padding:0!important; margin:0!important; display:block!important; }
+  main,header,nav,#toast-container,#login-screen,.no-print { display:none!important; }
+  #print-document { display:block!important; }
+  #print-document * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+}
+.tooltip-wrap { position:relative; }
+.tooltip-box { opacity:0; visibility:hidden; transform:translateX(-50%) translateY(8px); transition:all 0.2s ease; position:absolute; left:50%; bottom:110%; width:220px; z-index:50; pointer-events:none; }
+.tooltip-wrap:hover .tooltip-box { opacity:1; visibility:visible; transform:translateX(-50%) translateY(0); }
+/* Step indicator */
+.step-dot { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; transition:all 0.3s; }
+.step-dot.done { background:#10b981; color:white; }
+.step-dot.active { background:#10b981; color:white; box-shadow:0 0 0 4px rgba(16,185,129,0.2); }
+.step-dot.pending { background:transparent; border:2px solid #334155; color:#64748b; }
+.step-line { flex:1; height:2px; background:#334155; position:relative; }
+.step-line.done { background:#10b981; }
+/* Regime cards */
+.regime-card { border:2px solid transparent; border-radius:12px; padding:12px; cursor:pointer; transition:all 0.2s; background:rgba(255,255,255,0.04); }
+.regime-card:hover { border-color:#10b981; background:rgba(16,185,129,0.06); }
+.regime-card.selected { border-color:#10b981; background:rgba(16,185,129,0.12); }
+/* Demo banner */
+@keyframes demoPulse { 0%,100%{opacity:1;}50%{opacity:0.7;} }
+.demo-banner { animation:demoPulse 2s ease-in-out infinite; }
+/* Row hover */
+.product-row:hover { background:rgba(16,185,129,0.04); }
+</style>
 </head>
 <body class="bg-slate-50 text-slate-800 dark:bg-[#020617] dark:text-slate-100 min-h-screen flex flex-col overflow-x-hidden transition-colors duration-200">
 
-<!-- ══════════════════════════════════════════════════
-     TOAST CONTAINER
-══════════════════════════════════════════════════ -->
-<div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-2 no-print"></div>
+<!-- TOAST -->
+<div id="toast-container" class="fixed top-5 right-5 z-[200] flex flex-col gap-2 no-print" style="max-width:340px;"></div>
 
-<!-- ══════════════════════════════════════════════════
-     DOCUMENTO DE IMPRESSÃO (oculto na tela)
-══════════════════════════════════════════════════ -->
+<!-- PRINT DOC -->
 <div id="print-document" style="display:none;" class="p-8 text-black font-sans">
-    <div style="border-bottom:2px solid #000;padding-bottom:16px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-end;">
+  <div style="border-bottom:2px solid #000;padding-bottom:16px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-end;">
+    <div>
+      <div style="font-size:22px;font-weight:900;letter-spacing:-0.03em;text-transform:uppercase;">GESTORFISCAL</div>
+      <div style="font-size:11px;color:#475569;margin-top:3px;">Relatório de Triagem e Precificação Tributária</div>
+    </div>
+    <div style="text-align:right;font-size:10px;color:#475569;">
+      <div><strong>Vigência:</strong> 2026</div>
+      <div id="pr-date" style="margin-top:2px;"></div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:10px;background:#f8fafc;border-radius:6px;margin-bottom:16px;font-size:10px;border:1px solid #e2e8f0;">
+    <div><strong style="text-transform:uppercase;font-size:9px;letter-spacing:.05em;">Empresa</strong><br><span id="pr-empresa">—</span></div>
+    <div><strong style="text-transform:uppercase;font-size:9px;letter-spacing:.05em;">Regime Tributário</strong><br><span id="pr-regime">—</span></div>
+    <div><strong style="text-transform:uppercase;font-size:9px;letter-spacing:.05em;">Arquivo XML</strong><br><span id="pr-arquivo">—</span></div>
+    <div><strong style="text-transform:uppercase;font-size:9px;letter-spacing:.05em;">Margem Padrão</strong><br><span id="pr-margem">—</span></div>
+  </div>
+  <table id="pr-table" style="width:100%;border-collapse:collapse;font-size:10px;">
+    <thead>
+      <tr style="background:#f1f5f9;">
+        <th style="border:1px solid #000;padding:7px 8px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.05em;">Produto / Descrição</th>
+        <th style="border:1px solid #000;padding:7px 8px;">NCM</th>
+        <th style="border:1px solid #000;padding:7px 8px;">Custo Fábrica</th>
+        <th style="border:1px solid #000;padding:7px 8px;">Custo Efetivo</th>
+        <th style="border:1px solid #000;padding:7px 8px;">Frete%</th>
+        <th style="border:1px solid #000;padding:7px 8px;">Margem%</th>
+        <th style="border:1px solid #000;padding:7px 8px;font-weight:900;background:#f0fdf4;">Preço Sugerido</th>
+        <th style="border:1px solid #000;padding:7px 8px;border-left:2px dashed #000;font-size:9px;">Ajuste Manual</th>
+      </tr>
+    </thead>
+    <tbody id="pr-body"></tbody>
+  </table>
+  <div style="margin-top:20px;padding-top:12px;border-top:1px dashed #cbd5e1;font-size:9px;color:#64748b;display:flex;justify-content:space-between;">
+    <span>GESTORFISCAL © 2026 — Documento gerado automaticamente. Não substitui assessoria fiscal.</span>
+    <span id="pr-total"></span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     TELA DE LOGIN / CADASTRO MULTI-STEP
+══════════════════════════════════════════════ -->
+<div id="login-screen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-100 dark:bg-[#020617] px-4 no-print overflow-y-auto py-8">
+  <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl relative overflow-hidden anim-up">
+    <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-700"></div>
+
+    <!-- Logo -->
+    <div class="flex flex-col items-center mb-6">
+      <div class="w-14 h-14 bg-emerald-100 dark:bg-emerald-950/60 rounded-2xl flex items-center justify-center mb-3 border border-emerald-200 dark:border-emerald-800 shadow-md">
+        <i data-lucide="landmark" class="w-7 h-7 text-emerald-600 dark:text-emerald-400"></i>
+      </div>
+      <h1 class="text-2xl font-extrabold tracking-tight">GESTOR<span class="text-emerald-600 dark:text-emerald-400">FISCAL</span></h1>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Triagem e Precificação Tributária · 2026</p>
+    </div>
+
+    <!-- Auth mode tabs -->
+    <div id="auth-tabs" class="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl mb-6 gap-1">
+      <button onclick="setAuthMode('login')" id="tab-login-btn" class="flex-1 py-2 text-xs font-bold rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm transition-all">Entrar</button>
+      <button onclick="setAuthMode('signup')" id="tab-signup-btn" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 dark:text-slate-400 transition-all">Criar Conta</button>
+    </div>
+
+    <!-- ── LOGIN PANEL ── -->
+    <div id="panel-login" class="space-y-4">
+      <div>
+        <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">E-mail</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><i data-lucide="mail" class="w-4 h-4"></i></span>
+          <input type="email" id="login-email" autocomplete="email" class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all" placeholder="seuemail@empresa.com">
+        </div>
+      </div>
+      <div>
+        <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Senha</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><i data-lucide="lock" class="w-4 h-4"></i></span>
+          <input type="password" id="login-password" autocomplete="current-password" class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all" placeholder="••••••••">
+        </div>
+      </div>
+      <button onclick="doLogin()" id="btn-login" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/30">
+        <i data-lucide="log-in" class="w-4 h-4" id="icon-login"></i>
+        <span id="label-login">Entrar</span>
+      </button>
+      <div class="relative flex items-center gap-3 py-1">
+        <div class="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
+        <span class="text-[10px] text-slate-400 font-semibold">OU</span>
+        <div class="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
+      </div>
+      <button onclick="doDemo()" id="btn-demo" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-bold text-sm transition-all flex items-center justify-center gap-2 border border-slate-600">
+        <i data-lucide="play-circle" class="w-4 h-4"></i>
+        <span>Experimentar Demo Gratuito</span>
+      </button>
+    </div>
+
+    <!-- ── CADASTRO MULTI-STEP ── -->
+    <div id="panel-signup" class="hidden">
+      <!-- Progress steps -->
+      <div class="flex items-center mb-6" id="step-indicator">
+        <div class="step-dot active" id="sdot-1">1</div>
+        <div class="step-line" id="sline-1"></div>
+        <div class="step-dot pending" id="sdot-2">2</div>
+        <div class="step-line" id="sline-2"></div>
+        <div class="step-dot pending" id="sdot-3">3</div>
+      </div>
+      <p class="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-4" id="step-label">Passo 1 de 3 — Seus dados de acesso</p>
+
+      <!-- STEP 1: credenciais -->
+      <div id="step-1" class="space-y-4">
         <div>
-            <div style="font-size:22px;font-weight:900;letter-spacing:-0.03em;text-transform:uppercase;">GESTORFISCAL</div>
-            <div style="font-size:11px;color:#475569;margin-top:3px;">Relatório de Triagem e Precificação Tributária</div>
+          <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Nome Completo</label>
+          <div class="relative"><span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i data-lucide="user" class="w-4 h-4"></i></span>
+          <input type="text" id="s1-name" class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="João Silva"></div>
         </div>
-        <div style="text-align:right;font-size:10px;color:#475569;">
-            <div><strong>Vigência:</strong> 2026</div>
-            <div id="pr-date" style="margin-top:2px;"></div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">E-mail</label>
+          <div class="relative"><span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i data-lucide="mail" class="w-4 h-4"></i></span>
+          <input type="email" id="s1-email" class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="seuemail@empresa.com"></div>
         </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Senha (mín. 6 caracteres)</label>
+          <div class="relative"><span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i data-lucide="lock" class="w-4 h-4"></i></span>
+          <input type="password" id="s1-password" class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="••••••••"></div>
+        </div>
+        <button onclick="goStep(2)" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm transition-all flex items-center justify-center gap-2">
+          Continuar <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- STEP 2: empresa -->
+      <div id="step-2" class="hidden space-y-4">
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Razão Social / Nome Fantasia</label>
+          <div class="relative"><span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i data-lucide="building-2" class="w-4 h-4"></i></span>
+          <input type="text" id="s2-empresa" class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Minha Empresa Ltda"></div>
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">CNPJ (opcional)</label>
+          <div class="relative"><span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i data-lucide="file-text" class="w-4 h-4"></i></span>
+          <input type="text" id="s2-cnpj" maxlength="18" oninput="maskCNPJ(this)" class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="00.000.000/0001-00"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">UF</label>
+            <select id="s2-uf" class="w-full px-3 py-3 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              <option value="">UF</option>
+              <option>AC</option><option>AL</option><option>AM</option><option>AP</option><option>BA</option>
+              <option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option>
+              <option>MG</option><option>MS</option><option>MT</option><option>PA</option><option>PB</option>
+              <option>PE</option><option>PI</option><option>PR</option><option>RJ</option><option>RN</option>
+              <option>RO</option><option>RR</option><option>RS</option><option>SC</option><option>SE</option>
+              <option selected>SP</option><option>TO</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Cidade</label>
+            <input type="text" id="s2-cidade" class="w-full px-3 py-3 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="São Paulo">
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="goStep(1)" class="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-sm transition-all flex items-center justify-center gap-2">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar
+          </button>
+          <button onclick="goStep(3)" class="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm transition-all flex items-center justify-center gap-2">
+            Continuar <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 3: regime tributário -->
+      <div id="step-3" class="hidden space-y-3">
+        <p class="text-xs text-slate-500 dark:text-slate-400">Selecione o regime tributário da sua empresa:</p>
+        <div onclick="selectRegime('MEI')" id="card-MEI" class="regime-card">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400"><i data-lucide="user-check" class="w-5 h-5"></i></div>
+            <div><div class="text-sm font-bold text-slate-800 dark:text-white">MEI</div><div class="text-[10px] text-slate-500">Microempreendedor Individual · DAS fixo mensal</div></div>
+          </div>
+        </div>
+        <div onclick="selectRegime('SN')" id="card-SN" class="regime-card">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400"><i data-lucide="layers" class="w-5 h-5"></i></div>
+            <div><div class="text-sm font-bold text-slate-800 dark:text-white">Simples Nacional</div><div class="text-[10px] text-slate-500">Tabelas progressivas Anexo I–V · RBT12</div></div>
+          </div>
+          <!-- SN extras -->
+          <div id="sn-extras" class="hidden mt-3 grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Anexo</label>
+              <select id="sn-anexo" class="w-full px-2 py-2 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500" onclick="event.stopPropagation()">
+                <option value="I">Anexo I (Comércio)</option>
+                <option value="II">Anexo II (Indústria)</option>
+                <option value="III">Anexo III (Serv. 1)</option>
+                <option value="IV">Anexo IV (Serv. 2)</option>
+                <option value="V">Anexo V (Serv. 3)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">RBT12 (R$)</label>
+              <input type="number" id="sn-rba" placeholder="360000" onclick="event.stopPropagation()" class="w-full px-2 py-2 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+          </div>
+        </div>
+        <div onclick="selectRegime('LP')" id="card-LP" class="regime-card">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400"><i data-lucide="bar-chart-2" class="w-5 h-5"></i></div>
+            <div><div class="text-sm font-bold text-slate-800 dark:text-white">Lucro Presumido</div><div class="text-[10px] text-slate-500">PIS 0,65% · COFINS 3% · ICMS 17% · ~22,93% total</div></div>
+          </div>
+        </div>
+        <div onclick="selectRegime('LR')" id="card-LR" class="regime-card">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400"><i data-lucide="calculator" class="w-5 h-5"></i></div>
+            <div><div class="text-sm font-bold text-slate-800 dark:text-white">Lucro Real</div><div class="text-[10px] text-slate-500">PIS 1,65% · COFINS 7,6% com créditos · ICMS 17%</div></div>
+          </div>
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button onclick="goStep(2)" class="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-sm transition-all flex items-center justify-center gap-2">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar
+          </button>
+          <button onclick="doSignup()" id="btn-signup" class="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm transition-all flex items-center justify-center gap-2">
+            <i data-lucide="check-circle" class="w-4 h-4" id="icon-signup"></i>
+            <span id="label-signup">Criar Conta</span>
+          </button>
+        </div>
+      </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:10px;background:#f8fafc;border-radius:6px;margin-bottom:16px;font-size:10px;border:1px solid #e2e8f0;">
-        <div><strong style="text-transform:uppercase;font-size:9px;letter-spacing:.05em;">Empresa</strong><br><span id="pr-empresa">—</span></div>
-        <div><strong style="text-transform:uppercase;font-size:9px;letter-spacing:.05em;">Regime Tributário</strong><br><span id="pr-regime">—</span></div>
-        <div><strong style="text-transform:uppercase;font-size:9px;letter-spacing:.05em;">Arquivo XML</strong><br><span id="pr-arquivo">—</span></div>
-        <div><strong style="text-transform:uppercase;font-size:9px;letter-spacing:.05em;">Margem Padrão</strong><br><span id="pr-margem">—</span></div>
-    </div>
-    <table id="pr-table" style="width:100%;border-collapse:collapse;font-size:10px;">
-        <thead>
-            <tr style="background:#f1f5f9;">
-                <th style="border:1px solid #000;padding:7px 8px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.05em;">Produto / Descrição</th>
-                <th style="border:1px solid #000;padding:7px 8px;">NCM</th>
-                <th style="border:1px solid #000;padding:7px 8px;">Custo Fábrica</th>
-                <th style="border:1px solid #000;padding:7px 8px;">Custo Efetivo</th>
-                <th style="border:1px solid #000;padding:7px 8px;">Frete%</th>
-                <th style="border:1px solid #000;padding:7px 8px;">Margem%</th>
-                <th style="border:1px solid #000;padding:7px 8px;font-weight:900;background:#f0fdf4;">Preço Sugerido</th>
-                <th style="border:1px solid #000;padding:7px 8px;border-left:2px dashed #000;font-size:9px;">Ajuste Manual</th>
-            </tr>
-        </thead>
-        <tbody id="pr-body"></tbody>
-    </table>
-    <div style="margin-top:20px;padding-top:12px;border-top:1px dashed #cbd5e1;font-size:9px;color:#64748b;display:flex;justify-content:space-between;">
-        <span>GESTORFISCAL © 2026 — Documento gerado automaticamente. Não substitui assessoria fiscal.</span>
-        <span id="pr-total"></span>
-    </div>
+  </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════
-     TELA DE LOGIN
-══════════════════════════════════════════════════ -->
-<div id="login-screen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-100 dark:bg-[#020617] px-4 transition-all duration-500 no-print">
-    <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl relative overflow-hidden anim-up">
-        <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-700"></div>
+<!-- ══════════════════════════════════════════════
+     APP PRINCIPAL
+══════════════════════════════════════════════ -->
+<div id="app-screen" class="hidden flex flex-col min-h-screen">
 
-        <div class="flex flex-col items-center mb-8">
-            <div class="w-14 h-14 bg-emerald-100 dark:bg-emerald-950/60 rounded-2xl flex items-center justify-center mb-3 border border-emerald-200 dark:border-emerald-800 shadow-md">
-                <i data-lucide="landmark" class="w-7 h-7 text-emerald-600 dark:text-emerald-400"></i>
-            </div>
-            <h1 class="text-2xl font-extrabold tracking-tight">GESTOR<span class="text-emerald-600 dark:text-emerald-400">FISCAL</span></h1>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Triagem e Precificação Tributária · 2026</p>
+  <!-- DEMO BANNER -->
+  <div id="demo-banner" class="hidden demo-banner bg-amber-500 text-black text-xs font-bold text-center py-2 px-4 no-print">
+    MODO DEMO — Assine o plano para processar seus próprios XMLs · <a href="#" onclick="setAuthMode('login');showLogin()" class="underline">Criar conta grátis</a>
+  </div>
+
+  <!-- HEADER -->
+  <header class="sticky top-0 z-30 bg-white/80 dark:bg-[#0f172a]/80 backdrop-blur border-b border-slate-200 dark:border-slate-800 no-print">
+    <div class="max-w-5xl mx-auto px-4 flex items-center justify-between h-14">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center shadow-md shadow-emerald-900/30">
+          <i data-lucide="landmark" class="w-4 h-4 text-white"></i>
         </div>
-
-        <!-- Tabs Login/Cadastro -->
-        <div id="auth-tabs" class="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl mb-6 gap-1">
-            <button onclick="setAuthMode('login')" id="tab-login-btn" class="flex-1 py-2 text-xs font-bold rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm transition-all">Entrar</button>
-            <button onclick="setAuthMode('signup')" id="tab-signup-btn" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 dark:text-slate-400 transition-all">Criar Conta</button>
+        <div>
+          <span class="font-extrabold text-base tracking-tight">GESTOR<span class="text-emerald-600 dark:text-emerald-400">FISCAL</span></span>
+          <span class="ml-2 text-[9px] font-bold text-slate-400 uppercase tracking-widest hidden sm:inline">2026</span>
         </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="user-empresa-label" class="text-xs text-slate-500 dark:text-slate-400 hidden sm:block truncate max-w-[180px]"></span>
+        <button onclick="toggleTheme()" class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+          <i data-lucide="sun" class="w-4 h-4 block dark:hidden text-slate-600"></i>
+          <i data-lucide="moon" class="w-4 h-4 hidden dark:block text-slate-400"></i>
+        </button>
+        <button onclick="doLogout()" class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors" title="Sair">
+          <i data-lucide="log-out" class="w-4 h-4 text-slate-600 dark:text-slate-400"></i>
+        </button>
+      </div>
+    </div>
+  </header>
 
-        <form id="auth-form" onsubmit="handleAuth(event)" class="space-y-4">
-            <div id="field-name" class="hidden">
-                <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Nome / Razão Social</label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><i data-lucide="building-2" class="w-4 h-4"></i></span>
-                    <input type="text" id="auth-name" class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all" placeholder="Sua Empresa Ltda">
-                </div>
-            </div>
-            <div>
-                <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">E-mail</label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><i data-lucide="mail" class="w-4 h-4"></i></span>
-                    <input type="email" id="auth-email" required autocomplete="email" class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all" placeholder="voce@empresa.com">
-                </div>
-            </div>
-            <div>
-                <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Senha</label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><i data-lucide="lock" class="w-4 h-4"></i></span>
-                    <input type="password" id="auth-password" required autocomplete="current-password" class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all" placeholder="••••••••">
-                </div>
-            </div>
-            <button type="submit" id="auth-submit-btn" class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold py-3 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 mt-2">
-                <span id="auth-btn-text">Entrar no Sistema</span>
-                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+  <!-- NAV TABS -->
+  <nav class="sticky top-14 z-20 bg-white/80 dark:bg-[#0f172a]/80 backdrop-blur border-b border-slate-200 dark:border-slate-800 no-print">
+    <div class="max-w-5xl mx-auto px-4 flex gap-1 py-2">
+      <button onclick="switchTab(0)" id="nav-0" class="px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all bg-emerald-600 text-white">
+        <i data-lucide="file-scan" class="w-3.5 h-3.5"></i> Processar XML
+      </button>
+      <button onclick="switchTab(1)" id="nav-1" class="px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+        <i data-lucide="clock" class="w-3.5 h-3.5"></i> Histórico
+      </button>
+      <button onclick="switchTab(2)" id="nav-2" class="px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+        <i data-lucide="settings" class="w-3.5 h-3.5"></i> Configurações
+      </button>
+    </div>
+  </nav>
+
+  <main class="flex-1 max-w-5xl mx-auto w-full px-4 py-6 tab-container">
+
+    <!-- ── TAB 0: PROCESSAR XML ── -->
+    <div id="tab-0" class="tab-pane active space-y-5">
+
+      <!-- Regime atual badge -->
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-xs bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 pulse-dot"></span>
+          Regime: <span id="regime-badge-text">—</span>
+        </span>
+        <span id="regime-details-badge" class="text-xs text-slate-400 hidden"></span>
+      </div>
+
+      <!-- Upload XML -->
+      <div id="xml-upload-area" class="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-8 text-center cursor-pointer hover:border-emerald-500 transition-colors group" onclick="document.getElementById('xml-input').click()">
+        <div class="w-12 h-12 mx-auto mb-3 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center group-hover:bg-emerald-50 dark:group-hover:bg-emerald-950/50 transition-colors">
+          <i data-lucide="upload-cloud" class="w-6 h-6 text-slate-400 group-hover:text-emerald-500 transition-colors"></i>
+        </div>
+        <p class="text-sm font-bold text-slate-600 dark:text-slate-300 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Clique ou arraste um XML de NF-e</p>
+        <p class="text-xs text-slate-400 mt-1">Arquivo .xml de nota fiscal eletrônica</p>
+        <input type="file" id="xml-input" accept=".xml" class="hidden" onchange="handleXmlFile(event)">
+      </div>
+
+      <!-- Demo locked overlay -->
+      <div id="demo-xml-lock" class="hidden border-2 border-amber-400/50 rounded-2xl p-8 text-center bg-amber-500/5">
+        <div class="w-12 h-12 mx-auto mb-3 bg-amber-100 dark:bg-amber-950/50 rounded-xl flex items-center justify-center">
+          <i data-lucide="lock" class="w-6 h-6 text-amber-500"></i>
+        </div>
+        <p class="text-sm font-bold text-amber-600 dark:text-amber-400">Upload de XML bloqueado no Demo</p>
+        <p class="text-xs text-slate-400 mt-1">Você está explorando com dados de demonstração</p>
+        <button onclick="setAuthMode('signup');showLogin()" class="mt-4 px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all">Criar conta grátis →</button>
+      </div>
+
+      <!-- Configurações rápidas -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+            <i data-lucide="percent" class="w-3 h-3"></i> Margem Padrão (%)
+          </label>
+          <input type="number" id="cfg-margem" value="30" min="0" max="200" step="0.5" class="w-full px-3 py-2.5 bg-white dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+            <i data-lucide="truck" class="w-3 h-3"></i> Frete Entrada (%)
+          </label>
+          <input type="number" id="cfg-frete" value="2" min="0" max="30" step="0.1" class="w-full px-3 py-2.5 bg-white dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+            <i data-lucide="receipt" class="w-3 h-3"></i> ICMS Entrada (%)
+          </label>
+          <input type="number" id="cfg-icms-entrada" value="12" min="0" max="25" step="0.5" class="w-full px-3 py-2.5 bg-white dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+      </div>
+
+      <!-- Tabela de produtos -->
+      <div id="products-section" class="hidden">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div>
+            <span class="text-xs font-bold text-slate-600 dark:text-slate-300" id="xml-filename-label">—</span>
+            <span class="ml-2 text-xs text-slate-400" id="produtos-count"></span>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="recalcAll()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 transition-all">
+              <i data-lucide="refresh-cw" class="w-3 h-3"></i> Recalcular
             </button>
-        </form>
-
-        <div id="supabase-warn" class="hidden mt-4 bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl text-xs text-amber-800 dark:text-amber-300 text-center">
-            <i data-lucide="alert-triangle" class="w-3.5 h-3.5 inline mr-1"></i>
-            Supabase não configurado. Usando modo offline (localStorage).
-            <button onclick="showTab('conf'); hideLogin();" class="underline ml-1 font-bold">Configurar agora</button>
+            <button onclick="printReport()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 dark:bg-slate-700 hover:bg-slate-700 dark:hover:bg-slate-600 text-white flex items-center gap-1 transition-all">
+              <i data-lucide="printer" class="w-3 h-3"></i> Imprimir
+            </button>
+            <button onclick="saveToHistory()" id="btn-save-hist" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1 transition-all">
+              <i data-lucide="save" class="w-3 h-3"></i> Salvar
+            </button>
+          </div>
         </div>
 
-        <p class="text-center text-[10px] text-slate-400 mt-5">GESTORFISCAL © 2026 · Todos os cálculos são estimativas</p>
+        <!-- Summary cards -->
+        <div class="grid grid-cols-3 gap-3 mb-4">
+          <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-center">
+            <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Produtos</div>
+            <div class="text-xl font-extrabold text-slate-800 dark:text-white" id="sum-qty">0</div>
+          </div>
+          <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-center">
+            <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Custo Total</div>
+            <div class="text-sm font-extrabold text-slate-800 dark:text-white" id="sum-custo">R$ 0,00</div>
+          </div>
+          <div class="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900 rounded-xl p-3 text-center">
+            <div class="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-1">Venda Total</div>
+            <div class="text-sm font-extrabold text-emerald-700 dark:text-emerald-300" id="sum-venda">R$ 0,00</div>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+          <table class="w-full text-xs">
+            <thead class="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 uppercase text-[9px] tracking-wider">
+              <tr>
+                <th class="px-3 py-2.5 text-left">Produto</th>
+                <th class="px-3 py-2.5">NCM</th>
+                <th class="px-3 py-2.5">Qtd</th>
+                <th class="px-3 py-2.5">Custo Unit</th>
+                <th class="px-3 py-2.5">Custo Efetivo</th>
+                <th class="px-3 py-2.5">Frete%</th>
+                <th class="px-3 py-2.5">Margem%</th>
+                <th class="px-3 py-2.5">Alíquota</th>
+                <th class="px-3 py-2.5 font-extrabold text-emerald-600">Preço Sugerido</th>
+                <th class="px-3 py-2.5">Ajuste</th>
+              </tr>
+            </thead>
+            <tbody id="products-tbody" class="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-[#0f172a]"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="empty-state" class="text-center py-10 text-slate-400 text-sm hidden">
+        <i data-lucide="file-x" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+        <p>Nenhum produto encontrado no XML.</p>
+      </div>
     </div>
-</div>
 
-<!-- ══════════════════════════════════════════════════
-     APP SHELL
-══════════════════════════════════════════════════ -->
-<div id="app-shell" class="hidden flex-col flex-1 mb-20 md:mb-0">
+    <!-- ── TAB 1: HISTÓRICO ── -->
+    <div id="tab-1" class="tab-pane right space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
+          <i data-lucide="clock" class="w-4 h-4 text-emerald-500"></i> Histórico de Análises
+        </h2>
+        <button onclick="loadHistory()" class="text-xs text-emerald-600 dark:text-emerald-400 font-bold hover:underline flex items-center gap-1">
+          <i data-lucide="refresh-cw" class="w-3 h-3"></i> Atualizar
+        </button>
+      </div>
+      <div id="history-list" class="space-y-2">
+        <p class="text-xs text-slate-400 text-center py-8">Carregando histórico...</p>
+      </div>
+    </div>
 
-    <!-- HEADER -->
-    <header class="bg-white dark:bg-[#0f172a] border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 shadow-sm no-print transition-colors">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-            <!-- Logo -->
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-emerald-600 text-white rounded-xl flex items-center justify-center shadow-md cursor-pointer" onclick="showTab('calc')">
-                    <i data-lucide="landmark" class="w-5 h-5"></i>
-                </div>
-                <div>
-                    <span class="text-base font-extrabold tracking-tight block">GESTOR<span class="text-emerald-600 dark:text-emerald-400">FISCAL</span></span>
-                    <div class="flex items-center gap-1.5">
-                        <span id="regime-badge" class="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">MEI</span>
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 pulse-dot"></span>
-                        <span class="text-[9px] text-slate-400">Ativo</span>
-                    </div>
-                </div>
-            </div>
+    <!-- ── TAB 2: CONFIGURAÇÕES ── -->
+    <div id="tab-2" class="tab-pane right space-y-5">
+      <h2 class="text-sm font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
+        <i data-lucide="settings" class="w-4 h-4 text-emerald-500"></i> Configurações
+      </h2>
 
-            <!-- Desktop Nav -->
-            <nav class="hidden md:flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/50 dark:border-slate-800 gap-0.5">
-                <button onclick="showTab('calc')"  id="dk-calc"  class="nav-dk px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5"><i data-lucide="file-spreadsheet" class="w-4 h-4"></i>Processar XML</button>
-                <button onclick="showTab('hist')"  id="dk-hist"  class="nav-dk px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5"><i data-lucide="history" class="w-4 h-4"></i>Histórico</button>
-                <button onclick="showTab('conf')"  id="dk-conf"  class="nav-dk px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5"><i data-lucide="settings-2" class="w-4 h-4"></i>Configurações</button>
-            </nav>
-
-            <!-- Right controls -->
-            <div class="flex items-center gap-2">
-                <button onclick="toggleTheme()" class="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-all" title="Alternar tema">
-                    <i data-lucide="sun"  class="w-5 h-5 dark:hidden"></i>
-                    <i data-lucide="moon" class="w-5 h-5 hidden dark:block"></i>
-                </button>
-                <div class="relative">
-                    <button onclick="toggleDropdown()" class="flex items-center gap-2 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-all focus:outline-none">
-                        <div id="hdr-avatar" class="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white font-black text-sm">U</div>
-                        <span id="hdr-name" class="hidden sm:inline text-sm font-bold text-slate-700 dark:text-slate-200 pr-1">Usuário</span>
-                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
-                    </button>
-                    <!-- Dropdown -->
-                    <div id="profile-dropdown" class="absolute right-0 mt-2 w-64 bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl py-2 hidden anim-up z-50">
-                        <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800">
-                            <div id="dd-name" class="font-extrabold text-slate-900 dark:text-white text-sm">Usuário</div>
-                            <div id="dd-email" class="text-xs text-slate-400 mt-0.5">email@exemplo.com</div>
-                            <div id="dd-regime" class="mt-1.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full inline-block uppercase">Regime: MEI</div>
-                        </div>
-                        <div class="px-2 py-2 space-y-0.5">
-                            <button onclick="showTab('conf');toggleDropdown()" class="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-slate-700 dark:text-slate-300 transition-colors"><i data-lucide="settings-2" class="w-4 h-4 text-slate-400"></i>Configurações</button>
-                            <button onclick="handleLogout()" class="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-colors"><i data-lucide="log-out" class="w-4 h-4"></i>Sair com Segurança</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+      <!-- Empresa -->
+      <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4">
+        <h3 class="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Empresa</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Razão Social</label>
+            <input type="text" id="cfg-empresa" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">CNPJ</label>
+            <input type="text" id="cfg-cnpj" maxlength="18" oninput="maskCNPJ(this)" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
         </div>
-    </header>
-
-    <!-- MOBILE NAV -->
-    <nav class="md:hidden fixed bottom-4 left-4 right-4 bg-white/90 dark:bg-[#0f172a]/90 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/50 p-2.5 flex justify-around z-30 shadow-2xl rounded-3xl no-print">
-        <button onclick="showTab('calc')" id="mb-calc" class="mob-btn flex flex-col items-center p-2 text-[10px] font-bold gap-0.5 transition-all">
-            <i data-lucide="file-spreadsheet" class="w-5 h-5"></i><span>XML</span>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Regime Tributário</label>
+          <select id="cfg-regime" onchange="onRegimeChange()" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <option value="MEI">MEI — Microempreendedor Individual</option>
+            <option value="SN" selected>Simples Nacional</option>
+            <option value="LP">Lucro Presumido</option>
+            <option value="LR">Lucro Real</option>
+          </select>
+        </div>
+        <div id="cfg-sn-block" class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Anexo Simples</label>
+            <select id="cfg-sn-anexo" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              <option value="I">Anexo I (Comércio)</option>
+              <option value="II">Anexo II (Indústria)</option>
+              <option value="III">Anexo III</option>
+              <option value="IV">Anexo IV</option>
+              <option value="V">Anexo V</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Receita Bruta 12m (R$)</label>
+            <input type="number" id="cfg-rba" value="360000" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+        </div>
+        <button onclick="saveConfig()" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5">
+          <i data-lucide="save" class="w-3.5 h-3.5"></i> Salvar Configurações
         </button>
-        <button onclick="showTab('hist')" id="mb-hist" class="mob-btn flex flex-col items-center p-2 text-[10px] font-bold gap-0.5 transition-all">
-            <i data-lucide="history" class="w-5 h-5"></i><span>Histórico</span>
-        </button>
-        <button onclick="showTab('conf')" id="mb-conf" class="mob-btn flex flex-col items-center p-2 text-[10px] font-bold gap-0.5 transition-all">
-            <i data-lucide="settings-2" class="w-5 h-5"></i><span>Config</span>
-        </button>
-    </nav>
+      </div>
 
-    <!-- MAIN -->
-    <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 tab-container">
+      <!-- Drive -->
+      <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3">
+        <h3 class="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Google Drive</h3>
+        <p class="text-xs text-slate-400">Cole o link da pasta do Google Drive com seus XMLs de NF-e.</p>
+        <div class="flex gap-2">
+          <input type="url" id="cfg-drive" placeholder="https://drive.google.com/drive/folders/..." class="flex-1 px-3 py-2.5 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          <button onclick="openDrive()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl flex items-center gap-1">
+            <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Abrir
+          </button>
+        </div>
+      </div>
 
-        <!-- ═══════════════════════════════════════
-             ABA 1 — PROCESSAR XML
-        ═══════════════════════════════════════ -->
-        <section id="tab-calc" class="tab-pane active space-y-6">
-
-            <!-- Upload Zone -->
-            <div id="upload-zone" class="bg-white dark:bg-[#0f172a] border-2 border-dashed border-emerald-300 dark:border-emerald-800 rounded-3xl p-10 text-center shadow-sm hover:border-emerald-500 hover:bg-emerald-500/5 transition-all cursor-pointer group max-w-2xl mx-auto no-print">
-                <input type="file" id="xml-input" accept=".xml" class="hidden">
-                <label for="xml-input" class="cursor-pointer block">
-                    <div class="w-16 h-16 bg-emerald-100 dark:bg-emerald-950/50 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition-transform">
-                        <i data-lucide="upload-cloud" class="w-8 h-8 text-emerald-600 dark:text-emerald-400"></i>
-                    </div>
-                    <h3 class="text-lg font-bold text-slate-800 dark:text-white">Importar XML de NF-e</h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Arraste o arquivo ou clique para selecionar · Apenas <code class="bg-slate-100 dark:bg-slate-800 px-1 rounded">.xml</code></p>
-                </label>
-                <button onclick="loadDemo()" class="mt-5 text-xs text-emerald-600 dark:text-emerald-400 font-bold hover:underline">
-                    Ou carregar nota de demonstração →
-                </button>
-            </div>
-
-            <!-- Workspace -->
-            <div id="workspace" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-5 anim-up">
-
-                <!-- Lista lateral -->
-                <div class="lg:col-span-4 bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden flex flex-col max-h-[200px] lg:max-h-[calc(100vh-12rem)] no-print">
-                    <div class="p-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center">
-                        <h4 class="text-xs font-bold text-slate-700 dark:text-slate-200">Itens da NF-e</h4>
-                        <span id="prog-text" class="text-[10px] font-mono bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded">0/0</span>
-                    </div>
-                    <div id="product-list" class="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60"></div>
-                </div>
-
-                <!-- Painel central -->
-                <div class="lg:col-span-8 flex flex-col gap-5">
-
-                    <!-- Card do item ativo -->
-                    <div id="analysis-card" class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
-
-                        <!-- Cabeçalho do produto -->
-                        <div class="p-5 border-b border-slate-100 dark:border-slate-800/80 bg-gradient-to-r from-emerald-800 to-emerald-950 text-white flex justify-between items-start">
-                            <div class="flex-1 min-w-0">
-                                <span id="view-ncm" class="text-[10px] font-extrabold text-emerald-300 uppercase tracking-widest font-mono">NCM: —</span>
-                                <h2 id="view-title" class="text-base sm:text-lg font-extrabold mt-0.5 truncate">Selecione um produto</h2>
-                            </div>
-                            <div class="text-right ml-4 shrink-0">
-                                <span class="text-[10px] text-emerald-300">Custo Fábrica</span>
-                                <div id="view-cost" class="text-xl font-black font-mono">R$ 0,00</div>
-                            </div>
-                        </div>
-
-                        <!-- Inputs -->
-                        <div class="p-4 sm:p-5 space-y-5">
-                            <div class="grid grid-cols-3 gap-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 no-print">
-                                <div>
-                                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Frete/Agrega. %</label>
-                                    <input type="number" id="inp-frete" value="5" min="0" max="100" class="w-full bg-white dark:bg-[#020617] border border-slate-300 dark:border-slate-700 rounded-lg py-2 px-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-white">
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">ICMS Entrada %</label>
-                                    <input type="number" id="inp-icms" value="12" min="0" max="100" class="w-full bg-white dark:bg-[#020617] border border-slate-300 dark:border-slate-700 rounded-lg py-2 px-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-white">
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-1">Margem Lucro %</label>
-                                    <input type="number" id="inp-margem" value="50" min="1" max="500" class="w-full bg-white dark:bg-[#020617] border border-emerald-300 dark:border-emerald-700 rounded-lg py-2 px-3 text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 text-emerald-700 dark:text-emerald-400">
-                                </div>
-                            </div>
-
-                            <!-- Cards dos 4 regimes -->
-                            <div id="regimes-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-
-                                <!-- MEI -->
-                                <div id="card-mei" class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-slate-50 dark:bg-slate-900/30 hover:border-emerald-400 dark:hover:border-emerald-700 transition-all">
-                                    <div class="flex justify-between items-center mb-3">
-                                        <h5 class="font-extrabold text-slate-700 dark:text-slate-200 text-xs">MEI</h5>
-                                        <span class="text-[9px] font-mono text-slate-400">DAS Fixo · 0% sobre venda</span>
-                                    </div>
-                                    <div class="space-y-1 font-mono text-xs text-slate-600 dark:text-slate-400">
-                                        <div class="flex justify-between"><span>Custo Efetivo:</span><span id="r-mei-ceff">R$ 0,00</span></div>
-                                        <div class="flex justify-between pt-1 border-t border-slate-200 dark:border-slate-700 font-bold text-emerald-600 dark:text-emerald-400 text-sm">
-                                            <span>Preço Sugerido:</span><span id="r-mei-p">R$ 0,00</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Simples Nacional -->
-                                <div id="card-sn" class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-slate-50 dark:bg-slate-900/30 hover:border-blue-400 dark:hover:border-blue-700 transition-all">
-                                    <div class="flex justify-between items-center mb-3">
-                                        <h5 class="font-extrabold text-slate-700 dark:text-slate-200 text-xs">Simples Nacional</h5>
-                                        <span id="sn-rate-label" class="text-[9px] font-mono text-slate-400">Anexo I</span>
-                                    </div>
-                                    <div class="space-y-1 font-mono text-xs text-slate-600 dark:text-slate-400">
-                                        <div class="flex justify-between"><span>Custo Efetivo:</span><span id="r-sn-ceff">R$ 0,00</span></div>
-                                        <div class="flex justify-between"><span>Imposto DAS:</span><span id="r-sn-imp" class="text-red-600 dark:text-red-400">R$ 0,00</span></div>
-                                        <div class="flex justify-between pt-1 border-t border-slate-200 dark:border-slate-700 font-bold text-emerald-600 dark:text-emerald-400 text-sm">
-                                            <span>Preço Sugerido:</span><span id="r-sn-p">R$ 0,00</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Lucro Presumido -->
-                                <div id="card-lp" class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-slate-50 dark:bg-slate-900/30 hover:border-indigo-400 dark:hover:border-indigo-700 transition-all">
-                                    <div class="flex justify-between items-center mb-3">
-                                        <h5 class="font-extrabold text-slate-700 dark:text-slate-200 text-xs">Lucro Presumido</h5>
-                                        <span class="text-[9px] font-mono text-slate-400">PIS+COFINS+ICMS+IRPJ+CSLL</span>
-                                    </div>
-                                    <div class="space-y-1 font-mono text-xs text-slate-600 dark:text-slate-400">
-                                        <div class="flex justify-between"><span>Custo Efetivo:</span><span id="r-lp-ceff">R$ 0,00</span></div>
-                                        <div class="flex justify-between"><span>Impostos (~22,93%):</span><span id="r-lp-imp" class="text-red-600 dark:text-red-400">R$ 0,00</span></div>
-                                        <div class="flex justify-between pt-1 border-t border-slate-200 dark:border-slate-700 font-bold text-emerald-600 dark:text-emerald-400 text-sm">
-                                            <span>Preço Sugerido:</span><span id="r-lp-p">R$ 0,00</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Lucro Real -->
-                                <div id="card-lr" class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-slate-50 dark:bg-slate-900/30 hover:border-orange-400 dark:hover:border-orange-700 transition-all">
-                                    <div class="flex justify-between items-center mb-3">
-                                        <h5 class="font-extrabold text-slate-700 dark:text-slate-200 text-xs">Lucro Real</h5>
-                                        <span class="text-[9px] font-mono text-slate-400">Regime Geral / Não-Cumulativo</span>
-                                    </div>
-                                    <div class="space-y-1 font-mono text-xs text-slate-600 dark:text-slate-400">
-                                        <div class="flex justify-between"><span>Custo Efetivo:</span><span id="r-lr-ceff">R$ 0,00</span></div>
-                                        <div class="flex justify-between"><span>Impostos (~34,94%):</span><span id="r-lr-imp" class="text-red-600 dark:text-red-400">R$ 0,00</span></div>
-                                        <div class="flex justify-between pt-1 border-t border-slate-200 dark:border-slate-700 font-bold text-emerald-600 dark:text-emerald-400 text-sm">
-                                            <span>Preço Sugerido:</span><span id="r-lr-p">R$ 0,00</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Ações -->
-                            <div class="flex flex-col sm:flex-row justify-between items-center gap-3 pt-2 border-t border-slate-200 dark:border-slate-800 no-print">
-                                <div class="flex gap-2 w-full sm:w-auto">
-                                    <button onclick="imprimirLote()" class="flex-1 sm:flex-initial bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5">
-                                        <i data-lucide="printer" class="w-4 h-4"></i>Imprimir Lote
-                                    </button>
-                                    <button onclick="exportarCSV()" class="flex-1 sm:flex-initial bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5">
-                                        <i data-lucide="download" class="w-4 h-4"></i>CSV
-                                    </button>
-                                </div>
-                                <button id="btn-next" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-sm px-6 py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
-                                    <span>Salvar e Avançar</span>
-                                    <i data-lucide="check" class="w-4 h-4"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Card de finalização -->
-                    <div id="export-card" class="hidden bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-2xl p-8 shadow-sm text-center anim-up no-print max-w-xl mx-auto w-full">
-                        <div class="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i data-lucide="shield-check" class="w-8 h-8 text-emerald-500"></i>
-                        </div>
-                        <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">Lote Concluído!</h2>
-                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-2">Todos os produtos foram parametrizados e salvos.</p>
-                        <div class="mt-6 space-y-3">
-                            <button onclick="exportarCSV()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-all shadow-md flex items-center justify-center gap-2">
-                                <i data-lucide="file-down" class="w-5 h-5"></i>Exportar Planilha CSV
-                            </button>
-                            <button onclick="imprimirLote()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2">
-                                <i data-lucide="printer" class="w-5 h-5"></i>Imprimir Relatório PDF
-                            </button>
-                            <button onclick="abrirDrive()" id="btn-drive" class="hidden w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2">
-                                <i data-lucide="folder-open" class="w-5 h-5"></i>Abrir Pasta Google Drive
-                            </button>
-                            <button onclick="resetarFluxo()" class="w-full bg-transparent border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold py-2.5 rounded-xl transition-all hover:bg-slate-50 dark:hover:bg-slate-900">
-                                Processar Outro Arquivo XML
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ═══════════════════════════════════════
-             ABA 2 — HISTÓRICO / PASTAS
-        ═══════════════════════════════════════ -->
-        <section id="tab-hist" class="tab-pane right space-y-6">
-
-            <!-- Pastas mensais -->
-            <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                    <div>
-                        <span class="text-[10px] uppercase tracking-widest font-extrabold text-emerald-600 dark:text-emerald-400">Gestor de Arquivos</span>
-                        <h3 class="text-xl font-extrabold text-slate-800 dark:text-white mt-0.5">Estrutura de NF-e por Mês</h3>
-                        <p class="text-xs text-slate-400 mt-0.5">Clique em uma pasta para inspecionar os XMLs processados.</p>
-                    </div>
-                    <div id="drive-badge" class="hidden bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 cursor-pointer hover:bg-emerald-500/20 transition-all" onclick="abrirDrive()">
-                        <i data-lucide="folder-open" class="w-4 h-4"></i>Drive Conectado
-                    </div>
-                </div>
-                <div id="pastas-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
-            </div>
-
-            <!-- Inspetor de pasta -->
-            <div id="folder-panel" class="hidden bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-md anim-up">
-                <div class="flex justify-between items-center pb-4 mb-4 border-b border-slate-100 dark:border-slate-800">
-                    <div class="flex items-center gap-3">
-                        <div class="p-2.5 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl"><i data-lucide="folder-open" class="w-5 h-5"></i></div>
-                        <div>
-                            <h4 class="font-extrabold text-slate-800 dark:text-white text-base">Pasta: <span id="folder-title" class="text-emerald-600">—</span></h4>
-                            <p class="text-[10px] text-slate-400">XMLs arquivados nesta competência</p>
-                        </div>
-                    </div>
-                    <button onclick="fecharPasta()" class="text-xs font-bold text-slate-400 hover:text-slate-700 dark:hover:text-white bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl transition-colors">Fechar</button>
-                </div>
-                <div id="folder-empty" class="hidden py-8 text-center text-slate-400 text-xs">
-                    <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 text-slate-300 dark:text-slate-700"></i>
-                    Pasta vazia. Processe um XML e salve aqui!
-                </div>
-                <div id="folder-list" class="divide-y divide-slate-100 dark:divide-slate-800/60"></div>
-            </div>
-
-            <!-- Histórico geral -->
-            <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
-                <h3 class="text-sm font-extrabold uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
-                    <i data-lucide="history" class="w-5 h-5 text-emerald-500"></i>Histórico Geral de Auditorias
-                </h3>
-                <div id="global-hist" class="divide-y divide-slate-100 dark:divide-slate-800/60">
-                    <p class="text-xs text-slate-400 text-center py-6">Nenhum lote processado ainda.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- ═══════════════════════════════════════
-             ABA 3 — CONFIGURAÇÕES
-        ═══════════════════════════════════════ -->
-        <section id="tab-conf" class="tab-pane right space-y-6 max-w-2xl mx-auto">
-
-            <!-- Regime Fiscal -->
-            <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-5">
-                <div>
-                    <h3 class="text-lg font-extrabold text-slate-800 dark:text-white">Regime Tributário</h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Define qual card de regime é destacado como padrão nos relatórios.</p>
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">Enquadramento Fiscal Ativo</label>
-                    <select id="cfg-regime" class="w-full bg-slate-50 dark:bg-[#020617] border border-slate-300 dark:border-slate-700 rounded-xl py-2.5 px-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-white">
-                        <option value="comparativo">Modo Comparativo (exibe todos os regimes)</option>
-                        <option value="mei">MEI</option>
-                        <option value="sn">Simples Nacional</option>
-                        <option value="lp">Lucro Presumido</option>
-                        <option value="lr">Lucro Real</option>
-                    </select>
-                </div>
-                <div id="sn-config" class="hidden space-y-4 bg-blue-500/5 border border-blue-500/20 rounded-2xl p-4">
-                    <h5 class="text-xs font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400">Parâmetros Simples Nacional</h5>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Anexo</label>
-                            <select id="cfg-sn-anexo" class="w-full bg-white dark:bg-[#020617] border border-slate-300 dark:border-slate-700 rounded-xl py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-white">
-                                <option value="I">Anexo I — Comércio</option>
-                                <option value="II">Anexo II — Indústria</option>
-                                <option value="III">Anexo III — Serviços</option>
-                                <option value="IV">Anexo IV — Serviços</option>
-                                <option value="V">Anexo V — Serviços</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Receita Bruta Anual (R$)</label>
-                            <input type="number" id="cfg-sn-rba" value="180000" class="w-full bg-white dark:bg-[#020617] border border-slate-300 dark:border-slate-700 rounded-xl py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-white font-mono">
-                        </div>
-                    </div>
-                </div>
-                <button onclick="salvarRegime()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-all shadow-md">
-                    Salvar Regime
-                </button>
-            </div>
-
-            <!-- Google Drive -->
-            <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-5">
-                <div>
-                    <h3 class="text-lg font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
-                        <i data-lucide="folder-git-2" class="w-5 h-5 text-blue-500"></i>Google Drive — Pasta de Arquivos
-                    </h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Cole o link da sua pasta do Drive para acesso rápido após o processamento de XMLs.</p>
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Link da Pasta Drive</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><i data-lucide="link" class="w-4 h-4"></i></span>
-                        <input type="url" id="cfg-drive" placeholder="https://drive.google.com/drive/folders/..." class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-[#020617] border border-slate-300 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-white">
-                    </div>
-                    <p class="text-[10px] text-slate-400 mt-1">Após processar um XML, um botão "Abrir Drive" aparecerá para você salvar os arquivos manualmente na sua pasta.</p>
-                </div>
-                <button onclick="salvarDrive()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all shadow-md flex items-center justify-center gap-2">
-                    <i data-lucide="save" class="w-4 h-4"></i>Salvar Link Drive
-                </button>
-            </div>
-
-            <!-- Supabase -->
-            <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-5">
-                <div>
-                    <h3 class="text-lg font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
-                        <i data-lucide="database" class="w-5 h-5 text-emerald-500"></i>Supabase — Banco de Dados
-                    </h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Credenciais para sincronização em nuvem e autenticação segura de usuários.</p>
-                </div>
-                <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-xs text-amber-800 dark:text-amber-300">
-                    <strong>Como obter:</strong> Acesse <code>supabase.com/dashboard</code> → seu projeto → <em>Settings → API</em>. Copie a URL e a <em>anon key</em>.
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Project URL</label>
-                    <input type="url" id="cfg-sb-url" placeholder="https://xxxx.supabase.co" class="w-full py-3 px-4 bg-slate-50 dark:bg-[#020617] border border-slate-300 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-white font-mono">
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Anon Key (publishable)</label>
-                    <input type="text" id="cfg-sb-key" placeholder="eyJ..." class="w-full py-3 px-4 bg-slate-50 dark:bg-[#020617] border border-slate-300 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-white font-mono">
-                </div>
-                <button onclick="salvarSupabase()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-all shadow-md flex items-center justify-center gap-2">
-                    <i data-lucide="zap" class="w-4 h-4"></i>Conectar ao Supabase
-                </button>
-                <div id="sb-status" class="hidden bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 p-3 rounded-xl text-xs font-semibold text-center">
-                    ✓ Supabase configurado e ativo.
-                </div>
-                <details class="text-xs text-slate-500 dark:text-slate-400 cursor-pointer">
-                    <summary class="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1"><i data-lucide="code-2" class="w-3.5 h-3.5"></i>Ver SQL para criar tabelas no Supabase</summary>
-                    <pre class="mt-3 bg-slate-900 text-emerald-300 p-4 rounded-xl overflow-x-auto text-[10px] leading-relaxed whitespace-pre-wrap">-- Execute no SQL Editor do Supabase
-
-CREATE TABLE IF NOT EXISTS empresas (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
-  nome_empresa TEXT NOT NULL,
-  cnpj TEXT,
-  regime TEXT DEFAULT 'mei',
-  sn_anexo TEXT DEFAULT 'I',
-  sn_rba DECIMAL(15,2) DEFAULT 180000,
-  drive_url TEXT,
-  criado_em TIMESTAMPTZ DEFAULT NOW()
+      <!-- SQL Setup -->
+      <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3">
+        <h3 class="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Setup Supabase (1ª vez)</h3>
+        <p class="text-xs text-slate-400">Execute o SQL abaixo no <strong>SQL Editor</strong> do seu projeto Supabase para criar as tabelas.</p>
+        <pre class="bg-slate-900 text-emerald-400 text-[10px] p-4 rounded-xl overflow-x-auto leading-relaxed">-- Empresas
+create table if not exists empresas (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) not null,
+  nome text, cnpj text, uf text, cidade text,
+  regime text default 'SN',
+  sn_anexo text default 'I',
+  sn_rba numeric default 360000,
+  created_at timestamptz default now()
 );
-ALTER TABLE empresas ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "usuario_ve_propria" ON empresas FOR ALL USING (auth.uid() = user_id);
+alter table empresas enable row level security;
+create policy "own" on empresas using (auth.uid()=user_id) with check (auth.uid()=user_id);
 
-CREATE TABLE IF NOT EXISTS notas_fiscais (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  mes TEXT NOT NULL,
-  ano INTEGER NOT NULL,
-  nome_arquivo TEXT,
-  total_itens INTEGER DEFAULT 0,
-  total_custo DECIMAL(15,2) DEFAULT 0,
-  dados JSONB,
-  criado_em TIMESTAMPTZ DEFAULT NOW()
+-- Notas fiscais
+create table if not exists notas_fiscais (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) not null,
+  empresa_id uuid references empresas(id),
+  arquivo text, chave text,
+  regime text, margem numeric, frete numeric,
+  produtos jsonb,
+  created_at timestamptz default now()
 );
-ALTER TABLE notas_fiscais ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "usuario_ve_propria_nf" ON notas_fiscais FOR ALL USING (auth.uid() = user_id);</pre>
-                </details>
-            </div>
-        </section>
-    </main>
+alter table notas_fiscais enable row level security;
+create policy "own" on notas_fiscais using (auth.uid()=user_id) with check (auth.uid()=user_id);</pre>
+      </div>
+    </div>
+
+  </main>
 </div>
 
-<!-- ══════════════════════════════════════════════════
-     SCRIPTS
-══════════════════════════════════════════════════ -->
 <script>
-'use strict';
+/* ════════════════════════════════════════════════
+   ANTI-INSPECT PROTECTION
+════════════════════════════════════════════════ */
+(function(){
+  // Disable right-click
+  document.addEventListener('contextmenu', e => e.preventDefault());
+  // Disable keyboard shortcuts for DevTools
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'F12') { e.preventDefault(); return false; }
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && ['I','J','C','K'].includes(e.key.toUpperCase())) { e.preventDefault(); return false; }
+    if ((e.ctrlKey || e.metaKey) && e.key.toUpperCase() === 'U') { e.preventDefault(); return false; }
+    if (e.key === 'F5' && e.ctrlKey) { e.preventDefault(); return false; }
+  });
+  // Periodic console clear
+  setInterval(() => { try { console.clear(); } catch(x){} }, 3000);
+  // DevTools timing detection
+  let _dt = false;
+  const _check = () => {
+    const t = performance.now();
+    debugger;
+    if (performance.now() - t > 100) {
+      if (!_dt) { _dt = true; document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:#020617;color:#10b981;font-family:monospace;font-size:18px;text-align:center;padding:40px;">Acesso negado.<br>Feche as ferramentas do desenvolvedor.</div>'; }
+    } else { _dt = false; }
+  };
+  setInterval(_check, 2000);
+})();
 
-// ─────────────────────────────────────────────
-// TABELAS SIMPLES NACIONAL 2026
-// ─────────────────────────────────────────────
+/* ════════════════════════════════════════════════
+   CONSTANTES
+════════════════════════════════════════════════ */
+const GF_SB_URL = 'https://qaiqflcxfxygynumapyp.supabase.co';
+const GF_SB_KEY = 'sb_publishable_jWYB2iF5sGzqmSEai4MtPw_3T-hvUwE';
+const DEMO_EMAIL = 'demo@gestorfiscal.com.br';
+const DEMO_PASS  = 'gestorfiscal2026';
+
+const DEMO_PRODUTOS = [
+  { descricao:'Cabo Cat6 5m', ncm:'85444299', qCom:50, vUnCom:12.90 },
+  { descricao:'Roteador Wi-Fi Dual Band', ncm:'85176200', qCom:10, vUnCom:189.90 },
+  { descricao:'Switch 8 Portas 10/100', ncm:'85176200', qCom:8, vUnCom:95.00 },
+  { descricao:'Conector RJ45 Cat6 (cx 100)', ncm:'85366990', qCom:20, vUnCom:38.50 },
+];
+
 const SN_TABELAS = {
-    I:   [{ate:180000,nom:.04,ded:0},{ate:360000,nom:.073,ded:5940},{ate:720000,nom:.095,ded:13860},{ate:1800000,nom:.107,ded:22500},{ate:3600000,nom:.143,ded:87300},{ate:4800000,nom:.19,ded:378000}],
-    II:  [{ate:180000,nom:.045,ded:0},{ate:360000,nom:.078,ded:5940},{ate:720000,nom:.100,ded:13860},{ate:1800000,nom:.112,ded:22500},{ate:3600000,nom:.147,ded:85500},{ate:4800000,nom:.30,ded:720000}],
-    III: [{ate:180000,nom:.060,ded:0},{ate:360000,nom:.112,ded:9360},{ate:720000,nom:.135,ded:17640},{ate:1800000,nom:.160,ded:35640},{ate:3600000,nom:.210,ded:125640},{ate:4800000,nom:.33,ded:648000}],
-    IV:  [{ate:180000,nom:.045,ded:0},{ate:360000,nom:.090,ded:8100},{ate:720000,nom:.102,ded:12420},{ate:1800000,nom:.140,ded:39780},{ate:3600000,nom:.220,ded:183780},{ate:4800000,nom:.33,ded:828000}],
-    V:   [{ate:180000,nom:.155,ded:0},{ate:360000,nom:.180,ded:4500},{ate:720000,nom:.195,ded:9900},{ate:1800000,nom:.205,ded:17100},{ate:3600000,nom:.230,ded:62100},{ate:4800000,nom:.305,ded:540000}],
+  I:   [{ate:180000,nom:.04,ded:0},{ate:360000,nom:.073,ded:5940},{ate:720000,nom:.095,ded:13860},{ate:1800000,nom:.107,ded:22500},{ate:3600000,nom:.143,ded:87300},{ate:4800000,nom:.19,ded:378000}],
+  II:  [{ate:180000,nom:.045,ded:0},{ate:360000,nom:.078,ded:5940},{ate:720000,nom:.100,ded:13860},{ate:1800000,nom:.112,ded:22500},{ate:3600000,nom:.147,ded:85500},{ate:4800000,nom:.30,ded:720000}],
+  III: [{ate:180000,nom:.060,ded:0},{ate:360000,nom:.112,ded:9360},{ate:720000,nom:.135,ded:17640},{ate:1800000,nom:.160,ded:35640},{ate:3600000,nom:.210,ded:125640},{ate:4800000,nom:.33,ded:648000}],
+  IV:  [{ate:180000,nom:.045,ded:0},{ate:360000,nom:.090,ded:8100},{ate:720000,nom:.102,ded:12420},{ate:1800000,nom:.140,ded:39780},{ate:3600000,nom:.220,ded:183780},{ate:4800000,nom:.33,ded:828000}],
+  V:   [{ate:180000,nom:.155,ded:0},{ate:360000,nom:.180,ded:4500},{ate:720000,nom:.195,ded:9900},{ate:1800000,nom:.205,ded:17100},{ate:3600000,nom:.230,ded:62100},{ate:4800000,nom:.305,ded:540000}],
 };
-
-// Lucro Presumido (comércio)
 const LP = { pis:.0065, cofins:.03, icms:.17, irpj_base:.08, irpj_rate:.15, csll_base:.12, csll_rate:.09 };
-// Lucro Real (não-cumulativo)
 const LR = { pis:.0165, cofins:.076, icms:.17 };
 
-// ─────────────────────────────────────────────
-// FUNÇÕES DE CÁLCULO
-// ─────────────────────────────────────────────
-function aliquotaSN(rba, anexo) {
-    const tab = SN_TABELAS[anexo] || SN_TABELAS['I'];
-    const faixa = tab.find(f => rba <= f.ate) || tab[tab.length - 1];
-    return Math.max(0, (rba * faixa.nom - faixa.ded) / rba);
-}
-
-function calcPrecos(custo, frete, icmsIn, margem) {
-    const f = frete / 100, i = icmsIn / 100, m = margem / 100;
-    const cEff = custo * (1 + f + i);
-
-    // MEI: sem imposto sobre venda
-    const pMei = cEff / (1 - m);
-
-    // Simples Nacional
-    const rba  = parseFloat(localStorage.getItem('gf_sn_rba') || '180000');
-    const anx  = localStorage.getItem('gf_sn_anexo') || 'I';
-    const snAl = aliquotaSN(rba, anx);
-    const pSN  = cEff / (1 - snAl - m);
-
-    // Lucro Presumido
-    const lpTotal = LP.pis + LP.cofins + LP.icms + (LP.irpj_base * LP.irpj_rate) + (LP.csll_base * LP.csll_rate);
-    const pLP  = cEff / (1 - lpTotal - m);
-
-    // Lucro Real (PIS/COFINS com crédito de entrada simplificado)
-    const lrSaida  = LR.pis + LR.cofins + LR.icms;
-    const lrCredit = (LR.pis + LR.cofins) * (cEff / Math.max(cEff / (1 - lrSaida - m), 0.001));
-    const lrLiq    = Math.max(0, lrSaida - lrCredit / Math.max(cEff / (1 - lrSaida - m), 0.001));
-    const pLR      = cEff / (1 - lrLiq - m);
-
-    return { cEff, pMei, pSN, snAl, pLP, lpTotal, pLR, lrNet: lrLiq };
-}
-
-// ─────────────────────────────────────────────
-// CONFIGURAÇÃO SUPABASE (pré-configurado)
-// ─────────────────────────────────────────────
-const GF_DEFAULT_URL = 'https://qaiqflcxfxygynumapyp.supabase.co';
-const GF_DEFAULT_KEY = 'sb_publishable_jWYB2iF5sGzqmSEai4MtPw_3T-hvUwE';
-
-// ─────────────────────────────────────────────
-// ESTADO
-// ─────────────────────────────────────────────
-let supabaseClient = null;
-let authMode = 'login';
+/* ════════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════════ */
+let sb = null;
 let currentUser = null;
-let produtos = [], resultados = [], indexAtual = 0, xmlNome = '';
-let xmlDatabase = {};
-let currentTab = 'calc';
-let touchStartX = 0;
+let empresaData = {};
+let isDemo = false;
+let produtos = [];
+let currentXmlName = '';
+let currentStep = 1;
+let signupRegime = '';
+let activeTab = 0;
 
-// ─────────────────────────────────────────────
-// SUPABASE
-// ─────────────────────────────────────────────
-function initSupabase(url, key) {
-    if (!url || !key) return false;
-    try {
-        const { createClient } = window.supabase;
-        supabaseClient = createClient(url, key);
-        return true;
-    } catch(e) { return false; }
-}
+/* ════════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', async () => {
+  lucide.createIcons();
 
-// ─────────────────────────────────────────────
-// INIT
-// ─────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', () => {
-    lucide.createIcons();
-    loadConfigs();
-
-    // Usa credenciais salvas ou as padrão pré-configuradas
-    const sbUrl = localStorage.getItem('gf_sb_url') || GF_DEFAULT_URL;
-    const sbKey = localStorage.getItem('gf_sb_key') || GF_DEFAULT_KEY;
-
-    const ok = initSupabase(sbUrl, sbKey);
-    if (ok) {
-        document.getElementById('sb-status').classList.remove('hidden');
-        document.getElementById('supabase-warn').classList.add('hidden');
-        tryAutoLogin();
-    } else {
-        document.getElementById('supabase-warn').classList.remove('hidden');
-        showLoginScreen();
-    }
-
-    setupDragDrop();
-    setupSwipe();
-    document.getElementById('xml-input').addEventListener('change', onXmlFile);
-    document.getElementById('inp-frete').addEventListener('input', calcular);
-    document.getElementById('inp-icms').addEventListener('input', calcular);
-    document.getElementById('inp-margem').addEventListener('input', calcular);
-    document.getElementById('btn-next').addEventListener('click', onBtnNext);
-    document.getElementById('cfg-regime').addEventListener('change', onRegimeChange);
-});
-
-function loadConfigs() {
-    const regime = localStorage.getItem('gf_regime') || 'comparativo';
-    document.getElementById('cfg-regime').value = regime;
-    onRegimeChange();
-    const drive = localStorage.getItem('gf_drive') || '';
-    document.getElementById('cfg-drive').value = drive;
-    document.getElementById('cfg-sb-url').value = localStorage.getItem('gf_sb_url') || GF_DEFAULT_URL;
-    document.getElementById('cfg-sb-key').value = localStorage.getItem('gf_sb_key') || GF_DEFAULT_KEY;
-    document.getElementById('cfg-sn-anexo').value = localStorage.getItem('gf_sn_anexo') || 'I';
-    document.getElementById('cfg-sn-rba').value   = localStorage.getItem('gf_sn_rba')   || '180000';
-    updateDriveBadge();
-}
-
-// ─────────────────────────────────────────────
-// AUTH
-// ─────────────────────────────────────────────
-async function tryAutoLogin() {
-    if (!supabaseClient) { showLoginScreen(); return; }
-    const { data: { session } } = await supabaseClient.auth.getSession();
+  try {
+    sb = window.supabase.createClient(GF_SB_URL, GF_SB_KEY);
+    const { data: { session } } = await sb.auth.getSession();
     if (session) {
-        currentUser = session.user;
-        await carregarDados();
-        showApp();
-    } else {
-        showLoginScreen();
+      await afterLogin(session.user);
     }
-}
+  } catch(e) {
+    console.warn('Supabase init error:', e);
+  }
 
-function setAuthMode(m) {
-    authMode = m;
-    document.getElementById('field-name').classList.toggle('hidden', m !== 'signup');
-    document.getElementById('auth-btn-text').textContent = m === 'login' ? 'Entrar no Sistema' : 'Criar Conta';
-    document.getElementById('tab-login-btn').className = `flex-1 py-2 text-xs font-bold rounded-lg transition-all ${m==='login' ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`;
-    document.getElementById('tab-signup-btn').className = `flex-1 py-2 text-xs font-bold rounded-lg transition-all ${m==='signup' ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`;
-}
-
-async function handleAuth(e) {
-    e.preventDefault();
-    const email = document.getElementById('auth-email').value.trim();
-    const pass  = document.getElementById('auth-password').value;
-    const btn   = document.getElementById('auth-submit-btn');
-    btn.disabled = true; btn.classList.add('opacity-60');
-
-    if (!supabaseClient) {
-        // offline mode
-        currentUser = { email, id: btoa(email) };
-        xmlDatabase = JSON.parse(localStorage.getItem(`gf_db_${currentUser.id}`) || '{}');
-        showApp(); btn.disabled = false; btn.classList.remove('opacity-60');
-        return;
-    }
-
-    try {
-        let result;
-        if (authMode === 'login') {
-            result = await supabaseClient.auth.signInWithPassword({ email, password: pass });
-        } else {
-            result = await supabaseClient.auth.signUp({ email, password: pass });
-        }
-        if (result.error) { toast(result.error.message, 'danger'); }
-        else {
-            currentUser = result.data.user;
-            await carregarDados();
-            showApp();
-        }
-    } catch(err) { toast('Erro de conexão.', 'danger'); }
-    btn.disabled = false; btn.classList.remove('opacity-60');
-}
-
-async function handleLogout() {
-    if (supabaseClient) await supabaseClient.auth.signOut();
-    currentUser = null; produtos = []; resultados = []; xmlDatabase = {};
-    resetarFluxo();
-    showLoginScreen();
-    toggleDropdown();
-    toast('Sessão encerrada.', 'info');
-}
-
-async function carregarDados() {
-    if (!supabaseClient || !currentUser) return;
-    const { data } = await supabaseClient.from('notas_fiscais').select('*').eq('user_id', currentUser.id);
-    if (data) {
-        data.forEach(row => {
-            const k = row.mes;
-            if (!xmlDatabase[k]) xmlDatabase[k] = [];
-            xmlDatabase[k].push({ id: row.id, name: row.nome_arquivo, date: new Date(row.criado_em).toLocaleDateString('pt-BR'), cost: row.total_custo, count: row.total_itens, dados: row.dados });
-        });
-    }
-    // empresa config
-    const { data: emp } = await supabaseClient.from('empresas').select('*').eq('user_id', currentUser.id).maybeSingle();
-    if (emp) {
-        localStorage.setItem('gf_regime', emp.regime || 'comparativo');
-        localStorage.setItem('gf_sn_anexo', emp.sn_anexo || 'I');
-        localStorage.setItem('gf_sn_rba', emp.sn_rba || 180000);
-        if (emp.drive_url) localStorage.setItem('gf_drive', emp.drive_url);
-        loadConfigs();
-    }
-}
-
-// ─────────────────────────────────────────────
-// UI
-// ─────────────────────────────────────────────
-function showLoginScreen() {
-    document.getElementById('login-screen').classList.remove('hidden');
-    document.getElementById('app-shell').classList.remove('flex');
-    document.getElementById('app-shell').classList.add('hidden');
-}
-function hideLogin() {
-    document.getElementById('login-screen').classList.add('hidden');
-}
-function showApp() {
-    hideLogin();
-    document.getElementById('app-shell').classList.remove('hidden');
-    document.getElementById('app-shell').classList.add('flex');
-
-    const nome = currentUser?.email?.split('@')[0] || 'Usuário';
-    document.getElementById('hdr-name').textContent = nome;
-    document.getElementById('hdr-avatar').textContent = nome[0].toUpperCase();
-    document.getElementById('dd-name').textContent = nome;
-    document.getElementById('dd-email').textContent = currentUser?.email || '—';
-
-    const regime = localStorage.getItem('gf_regime') || 'comparativo';
-    const labels = {comparativo:'Comparativo',mei:'MEI',sn:'Simples Nac.',lp:'L. Presumido',lr:'Lucro Real'};
-    document.getElementById('regime-badge').textContent = labels[regime] || 'MEI';
-    document.getElementById('dd-regime').textContent = `Regime: ${labels[regime] || '—'}`;
-
-    renderPastas();
-    renderHistGlobal();
-    showTab('calc');
-    toast(`Bem-vindo, ${nome}!`);
-}
-
-function toggleDropdown() {
-    document.getElementById('profile-dropdown').classList.toggle('hidden');
-}
-
-document.addEventListener('click', e => {
-    const dd = document.getElementById('profile-dropdown');
-    const trigger = document.getElementById('hdr-name')?.closest('div.relative');
-    if (!dd?.contains(e.target) && !trigger?.contains(e.target)) {
-        dd?.classList.add('hidden');
-    }
+  // Drag & drop XML
+  const area = document.getElementById('xml-upload-area');
+  if (area) {
+    area.addEventListener('dragover', e => { e.preventDefault(); area.classList.add('border-emerald-500'); });
+    area.addEventListener('dragleave', () => area.classList.remove('border-emerald-500'));
+    area.addEventListener('drop', e => { e.preventDefault(); area.classList.remove('border-emerald-500'); if (e.dataTransfer.files[0]) processXmlFile(e.dataTransfer.files[0]); });
+  }
 });
 
-// ─────────────────────────────────────────────
-// TABS
-// ─────────────────────────────────────────────
-const TABS = ['calc','hist','conf'];
-function showTab(id) {
-    TABS.forEach((t, idx) => {
-        const pane = document.getElementById(`tab-${t}`);
-        const ci   = TABS.indexOf(id);
-        if (t === id) {
-            pane.className = 'tab-pane active space-y-6';
-            if (t === 'conf') pane.classList.add('max-w-2xl','mx-auto');
-        } else {
-            pane.className = `tab-pane ${idx < TABS.indexOf(id) ? 'left' : 'right'} space-y-6`;
-            if (t === 'conf') pane.classList.add('max-w-2xl','mx-auto');
-        }
-        // desktop nav
-        document.getElementById(`dk-${t}`).className = `nav-dk px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 ${t===id ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`;
-        // mobile nav
-        document.getElementById(`mb-${t}`).className = `mob-btn flex flex-col items-center p-2 text-[10px] font-bold gap-0.5 transition-all ${t===id ? 'text-emerald-600 dark:text-emerald-400 scale-105' : 'text-slate-400 dark:text-slate-500'}`;
-    });
-    currentTab = id;
-    if (id === 'hist') { renderPastas(); renderHistGlobal(); }
+/* ════════════════════════════════════════════════
+   AUTH UI
+════════════════════════════════════════════════ */
+function setAuthMode(mode) {
+  const isLogin = mode === 'login';
+  document.getElementById('tab-login-btn').className = isLogin
+    ? 'flex-1 py-2 text-xs font-bold rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm transition-all'
+    : 'flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 dark:text-slate-400 transition-all';
+  document.getElementById('tab-signup-btn').className = !isLogin
+    ? 'flex-1 py-2 text-xs font-bold rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm transition-all'
+    : 'flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 dark:text-slate-400 transition-all';
+  document.getElementById('panel-login').classList.toggle('hidden', !isLogin);
+  document.getElementById('panel-signup').classList.toggle('hidden', isLogin);
+  if (!isLogin) goStep(1);
 }
 
-// ─────────────────────────────────────────────
-// SWIPE
-// ─────────────────────────────────────────────
-function setupSwipe() {
-    const el = document.getElementById('app-shell');
-    el.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, { passive:true });
-    el.addEventListener('touchend',   e => {
-        const dx = touchStartX - e.changedTouches[0].screenX;
-        const ci = TABS.indexOf(currentTab);
-        if (dx > 80 && ci < TABS.length-1) showTab(TABS[ci+1]);
-        if (dx < -80 && ci > 0) showTab(TABS[ci-1]);
-    }, { passive:true });
+function showLogin() {
+  document.getElementById('app-screen').classList.add('hidden');
+  document.getElementById('login-screen').classList.remove('hidden');
 }
 
-// ─────────────────────────────────────────────
-// TEMA
-// ─────────────────────────────────────────────
-function toggleTheme() {
-    const isDark = document.documentElement.classList.toggle('dark');
-    localStorage.setItem('gf_theme', isDark ? 'dark' : 'light');
-    lucide.createIcons();
-}
-
-// ─────────────────────────────────────────────
-// XML UPLOAD
-// ─────────────────────────────────────────────
-function setupDragDrop() {
-    const zone = document.getElementById('upload-zone');
-    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('border-emerald-500','bg-emerald-500/10'); });
-    zone.addEventListener('dragleave', () => zone.classList.remove('border-emerald-500','bg-emerald-500/10'));
-    zone.addEventListener('drop', e => {
-        e.preventDefault();
-        zone.classList.remove('border-emerald-500','bg-emerald-500/10');
-        const f = e.dataTransfer.files[0];
-        if (f && f.name.endsWith('.xml')) lerArquivo(f);
-        else toast('Selecione um arquivo .xml válido.', 'danger');
-    });
-}
-
-function onXmlFile(e) {
-    const f = e.target.files[0];
-    if (f) lerArquivo(f);
-}
-
-function lerArquivo(f) {
-    xmlNome = f.name;
-    const r = new FileReader();
-    r.onload = ev => parsearXML(ev.target.result);
-    r.readAsText(f, 'UTF-8');
-}
-
-function parsearXML(txt) {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(txt, 'text/xml');
-    const dets = doc.getElementsByTagName('det');
-    if (dets.length === 0) { toast('Nenhum item válido no XML.', 'danger'); return; }
-
-    produtos = []; resultados = []; indexAtual = 0;
-    for (let i = 0; i < dets.length; i++) {
-        const p = dets[i].getElementsByTagName('prod')[0];
-        if (!p) continue;
-        produtos.push({
-            id: i,
-            nome: p.getElementsByTagName('xProd')[0]?.textContent || 'Produto',
-            ncm:  p.getElementsByTagName('NCM')[0]?.textContent || '00000000',
-            custo: parseFloat(p.getElementsByTagName('vUnCom')[0]?.textContent || 0),
-            qty:  parseFloat(p.getElementsByTagName('qCom')[0]?.textContent || 1),
-        });
+/* ── STEP NAVIGATION ── */
+function goStep(n) {
+  // Validate before advancing
+  if (n > currentStep) {
+    if (currentStep === 1) {
+      const name = document.getElementById('s1-name').value.trim();
+      const email = document.getElementById('s1-email').value.trim();
+      const pass = document.getElementById('s1-password').value;
+      if (!name) { toast('Informe seu nome.', 'warning'); return; }
+      if (!email || !email.includes('@')) { toast('E-mail inválido.', 'warning'); return; }
+      if (pass.length < 6) { toast('Senha deve ter ao menos 6 caracteres.', 'warning'); return; }
     }
-    if (produtos.length === 0) { toast('XML sem produtos válidos.', 'danger'); return; }
-
-    produtos.forEach((p, i) => calcularItem(i, 5, 12, 50, false));
-    iniciarWorkspace();
-    toast(`${produtos.length} produto(s) carregados da NF-e.`);
-}
-
-function loadDemo() {
-    xmlNome = 'demo_nfe_gestorfiscal.xml';
-    produtos = [
-        {id:0, nome:'Cabo de Rede Cat6 Premium 10m',            ncm:'85444290', custo:45.00,  qty:15},
-        {id:1, nome:'Roteador Wireless Gigabyte AC1200',         ncm:'85176299', custo:185.00, qty:5},
-        {id:2, nome:'Switch Gigabit Ethernet 8 Portas Metal',    ncm:'85176239', custo:120.00, qty:8},
-        {id:3, nome:'Conector RJ45 EZ-Crimp Blindado (Pote 50)', ncm:'85369090', custo:35.00,  qty:20},
-    ];
-    resultados = []; indexAtual = 0;
-    produtos.forEach((p, i) => calcularItem(i, 5, 12, 40, false));
-    iniciarWorkspace();
-    toast('Nota de demonstração carregada!');
-}
-
-function iniciarWorkspace() {
-    document.getElementById('upload-zone').classList.add('hidden');
-    document.getElementById('workspace').classList.remove('hidden');
-    document.getElementById('analysis-card').classList.remove('hidden');
-    document.getElementById('export-card').classList.add('hidden');
-    renderSidebar();
-    carregarProduto(0);
-}
-
-// ─────────────────────────────────────────────
-// SIDEBAR
-// ─────────────────────────────────────────────
-function renderSidebar() {
-    const list = document.getElementById('product-list');
-    list.innerHTML = '';
-    produtos.forEach((p, i) => {
-        const saved = resultados[i]?._salvo;
-        const active = i === indexAtual;
-        const div = document.createElement('div');
-        div.className = `p-3 flex items-center justify-between cursor-pointer border-l-4 transition-all ${active ? 'bg-emerald-500/10 dark:bg-emerald-900/20 border-emerald-500' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-900/30'}`;
-        div.onclick = () => carregarProduto(i);
-        div.innerHTML = `
-            <div class="truncate pr-2">
-                <p class="text-xs font-bold truncate ${active ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'}">${p.nome}</p>
-                <span class="text-[10px] text-slate-400 font-mono">NCM: ${p.ncm} · Qtd: ${p.qty}</span>
-            </div>
-            <span class="shrink-0 text-[9px] font-extrabold px-1.5 py-0.5 rounded ${saved ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}">
-                ${saved ? '✓ Salvo' : 'Fila'}
-            </span>`;
-        list.appendChild(div);
-    });
-    const saved = resultados.filter(r => r?._salvo).length;
-    document.getElementById('prog-text').textContent = `${saved}/${produtos.length}`;
-}
-
-function carregarProduto(i) {
-    indexAtual = i;
-    const p = produtos[i];
-    document.getElementById('view-title').textContent = p.nome;
-    document.getElementById('view-ncm').textContent   = `NCM: ${p.ncm}`;
-    document.getElementById('view-cost').textContent  = fmt(p.custo);
-    if (resultados[i]) {
-        document.getElementById('inp-frete').value  = resultados[i]._frete;
-        document.getElementById('inp-icms').value   = resultados[i]._icms;
-        document.getElementById('inp-margem').value = resultados[i]._margem;
+    if (currentStep === 2) {
+      const empresa = document.getElementById('s2-empresa').value.trim();
+      if (!empresa) { toast('Informe a razão social.', 'warning'); return; }
     }
-    calcular();
-    renderSidebar();
-}
+  }
 
-// ─────────────────────────────────────────────
-// CÁLCULO
-// ─────────────────────────────────────────────
-function calcular() {
-    if (!produtos[indexAtual]) return;
-    const frete  = parseFloat(document.getElementById('inp-frete').value) || 0;
-    const icms   = parseFloat(document.getElementById('inp-icms').value) || 0;
-    const margem = parseFloat(document.getElementById('inp-margem').value) || 0;
-    const jaS    = resultados[indexAtual]?._salvo || false;
-
-    const res = calcularItem(indexAtual, frete, icms, margem, jaS);
-    renderResultados(res);
-    filtrarCardsRegime();
-}
-
-function calcularItem(i, frete, icms, margem, salvo) {
-    const p = produtos[i];
-    const r = calcPrecos(p.custo, frete, icms, margem);
-    const snAl = r.snAl;
-
-    resultados[i] = {
-        Produto: p.nome, NCM: p.ncm,
-        'Custo Fabrica': p.custo.toFixed(2),
-        'Frete %': frete, 'ICMS Entrada %': icms,
-        'Custo Efetivo': r.cEff.toFixed(2),
-        'Margem %': margem,
-        'Preco MEI': r.pMei.toFixed(2),
-        'Preco Simples': r.pSN.toFixed(2),
-        'Preco Presumido': r.pLP.toFixed(2),
-        'Preco Real': r.pLR.toFixed(2),
-        _frete: frete, _icms: icms, _margem: margem, _salvo: salvo,
-        _cEff: r.cEff, _pMei: r.pMei, _pSN: r.pSN, _pLP: r.pLP, _pLR: r.pLR,
-        _snAl: snAl, _lpTotal: r.lpTotal, _lrNet: r.lrNet,
-    };
-    return resultados[i];
-}
-
-function renderResultados(res) {
-    document.getElementById('r-mei-ceff').textContent = fmt(res._cEff);
-    document.getElementById('r-mei-p').textContent    = fmt(res._pMei);
-
-    const snPct = (res._snAl * 100).toFixed(2);
-    document.getElementById('sn-rate-label').textContent = `Alíq. Ef. ${snPct}%`;
-    document.getElementById('r-sn-ceff').textContent = fmt(res._cEff);
-    document.getElementById('r-sn-imp').textContent  = fmt(res._pSN * res._snAl);
-    document.getElementById('r-sn-p').textContent    = fmt(res._pSN);
-
-    document.getElementById('r-lp-ceff').textContent = fmt(res._cEff);
-    document.getElementById('r-lp-imp').textContent  = fmt(res._pLP * res._lpTotal);
-    document.getElementById('r-lp-p').textContent    = fmt(res._pLP);
-
-    document.getElementById('r-lr-ceff').textContent = fmt(res._cEff);
-    document.getElementById('r-lr-imp').textContent  = fmt(res._pLR * res._lrNet);
-    document.getElementById('r-lr-p').textContent    = fmt(res._pLR);
-}
-
-function filtrarCardsRegime() {
-    const regime = localStorage.getItem('gf_regime') || 'comparativo';
-    const map = { mei:'card-mei', sn:'card-sn', lp:'card-lp', lr:'card-lr' };
-    ['card-mei','card-sn','card-lp','card-lr'].forEach(id => {
-        const el = document.getElementById(id);
-        if (regime === 'comparativo') {
-            el.classList.remove('hidden');
-        } else {
-            el.classList.toggle('hidden', map[regime] !== id);
-        }
-    });
-}
-
-function onBtnNext() {
-    resultados[indexAtual]._salvo = true;
-    const next = indexAtual + 1;
-    if (next < produtos.length) {
-        carregarProduto(next);
-    } else {
-        finalizarLote();
+  // Update dots and lines
+  for (let i = 1; i <= 3; i++) {
+    const dot = document.getElementById(`sdot-${i}`);
+    dot.className = 'step-dot ' + (i < n ? 'done' : i === n ? 'active' : 'pending');
+    if (i < 3) {
+      const line = document.getElementById(`sline-${i}`);
+      line.className = 'step-line ' + (i < n ? 'done' : '');
     }
+    document.getElementById(`step-${i}`).classList.toggle('hidden', i !== n);
+  }
+  const labels = ['', 'Passo 1 de 3 — Seus dados de acesso', 'Passo 2 de 3 — Sua empresa', 'Passo 3 de 3 — Regime tributário'];
+  document.getElementById('step-label').textContent = labels[n];
+  currentStep = n;
+  lucide.createIcons();
 }
 
-// ─────────────────────────────────────────────
-// FINALIZAR
-// ─────────────────────────────────────────────
-async function finalizarLote() {
-    document.getElementById('analysis-card').classList.add('hidden');
-    document.getElementById('export-card').classList.remove('hidden');
-    renderSidebar();
-
-    const driveUrl = localStorage.getItem('gf_drive');
-    const btnDrive = document.getElementById('btn-drive');
-    if (driveUrl) btnDrive.classList.remove('hidden'); else btnDrive.classList.add('hidden');
-
-    await salvarNoBD();
-    toast('Lote finalizado e salvo!');
+function selectRegime(r) {
+  signupRegime = r;
+  ['MEI','SN','LP','LR'].forEach(x => document.getElementById('card-' + x).classList.remove('selected'));
+  document.getElementById('card-' + r).classList.add('selected');
+  document.getElementById('sn-extras').classList.toggle('hidden', r !== 'SN');
 }
 
-async function salvarNoBD() {
-    const mes = getMesNome(new Date().getMonth());
-    const totalCusto = resultados.reduce((s, r) => s + parseFloat(r?.['Custo Fabrica'] || 0), 0);
-    const entry = {
-        name: xmlNome, date: new Date().toLocaleDateString('pt-BR'),
-        cost: totalCusto, count: produtos.length,
-        dados: resultados.filter(Boolean),
-    };
+/* ════════════════════════════════════════════════
+   AUTH ACTIONS
+════════════════════════════════════════════════ */
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-password').value;
+  if (!email || !pass) { toast('Preencha e-mail e senha.', 'warning'); return; }
 
-    if (!xmlDatabase[mes]) xmlDatabase[mes] = [];
-    xmlDatabase[mes].push(entry);
+  setBtnLoading('btn-login', 'icon-login', 'label-login', true, 'Entrando...');
 
-    if (supabaseClient && currentUser) {
-        await supabaseClient.from('notas_fiscais').insert({
-            user_id: currentUser.id, mes, ano: new Date().getFullYear(),
-            nome_arquivo: xmlNome, total_itens: produtos.length,
-            total_custo: totalCusto, dados: entry.dados,
-        });
-    } else {
-        const k = `gf_db_${currentUser?.id || 'local'}`;
-        const saved = JSON.parse(localStorage.getItem(k) || '{}');
-        if (!saved[mes]) saved[mes] = [];
-        saved[mes].push(entry);
-        localStorage.setItem(k, JSON.stringify(saved));
+  try {
+    if (!sb) throw new Error('Serviço indisponível. Use o servidor local (.bat).');
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if (error) throw error;
+    await afterLogin(data.user);
+    toast('Bem-vindo de volta!', 'success');
+  } catch(e) {
+    setBtnLoading('btn-login', 'icon-login', 'label-login', false);
+    const msg = translateAuthError(e.message || String(e));
+    toast(msg, 'error');
+  }
+}
+
+async function doDemo() {
+  isDemo = true;
+  currentUser = { id: 'demo', email: DEMO_EMAIL };
+  empresaData = { nome: 'Empresa Demo', regime: 'SN', sn_anexo: 'I', sn_rba: 360000 };
+  loadApp(true);
+  toast('Modo demo ativado! Explore à vontade.', 'success');
+}
+
+async function doSignup() {
+  if (!signupRegime) { toast('Selecione o regime tributário.', 'warning'); return; }
+
+  const name    = document.getElementById('s1-name').value.trim();
+  const email   = document.getElementById('s1-email').value.trim();
+  const pass    = document.getElementById('s1-password').value;
+  const empresa = document.getElementById('s2-empresa').value.trim();
+  const cnpj    = document.getElementById('s2-cnpj').value.trim();
+  const uf      = document.getElementById('s2-uf').value;
+  const cidade  = document.getElementById('s2-cidade').value.trim();
+  const snAnexo = document.getElementById('sn-anexo').value;
+  const snRba   = parseFloat(document.getElementById('sn-rba').value) || 360000;
+
+  setBtnLoading('btn-signup', 'icon-signup', 'label-signup', true, 'Criando conta...');
+
+  try {
+    if (!sb) throw new Error('Serviço indisponível. Use o servidor local (.bat).');
+    const { data, error } = await sb.auth.signUp({ email, password: pass, options: { data: { nome: name } } });
+    if (error) throw error;
+
+    const uid = data.user?.id;
+    if (uid) {
+      await sb.from('empresas').insert({
+        user_id: uid, nome: empresa, cnpj, uf, cidade,
+        regime: signupRegime, sn_anexo: snAnexo, sn_rba: snRba
+      });
     }
+
+    setBtnLoading('btn-signup', 'icon-signup', 'label-signup', false);
+    toast('Conta criada! Verifique seu e-mail para confirmar.', 'success');
+
+    // Try to login immediately
+    const { data: d2, error: e2 } = await sb.auth.signInWithPassword({ email, password: pass });
+    if (!e2 && d2?.user) await afterLogin(d2.user);
+  } catch(e) {
+    setBtnLoading('btn-signup', 'icon-signup', 'label-signup', false);
+    toast(translateAuthError(e.message || String(e)), 'error');
+  }
 }
 
-function resetarFluxo() {
-    produtos = []; resultados = []; indexAtual = 0; xmlNome = '';
-    document.getElementById('xml-input').value = '';
-    document.getElementById('upload-zone').classList.remove('hidden');
-    document.getElementById('workspace').classList.add('hidden');
-    document.getElementById('export-card').classList.add('hidden');
-    document.getElementById('analysis-card').classList.remove('hidden');
-    document.getElementById('product-list').innerHTML = '';
+async function afterLogin(user) {
+  currentUser = user;
+  isDemo = false;
+
+  // Load empresa data
+  try {
+    const { data } = await sb.from('empresas').select('*').eq('user_id', user.id).single();
+    if (data) empresaData = data;
+  } catch(e) { empresaData = {}; }
+
+  loadApp(false);
 }
 
-// ─────────────────────────────────────────────
-// HISTÓRICO / PASTAS
-// ─────────────────────────────────────────────
-const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const getMesNome = i => MESES[i];
+function loadApp(demo) {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app-screen').classList.remove('hidden');
+  document.getElementById('demo-banner').classList.toggle('hidden', !demo);
+  document.getElementById('xml-upload-area').classList.toggle('hidden', demo);
+  document.getElementById('demo-xml-lock').classList.toggle('hidden', !demo);
 
-function renderPastas() {
-    const container = document.getElementById('pastas-grid');
-    if (!container) return;
-    container.innerHTML = '';
-    const mesAtual = new Date().getMonth();
+  const empresa = empresaData.nome || currentUser?.email || '';
+  document.getElementById('user-empresa-label').textContent = empresa;
+  document.getElementById('pr-empresa').textContent = empresa;
 
-    MESES.forEach((mes, i) => {
-        if (i > mesAtual) return;
-        const lista = xmlDatabase[mes] || [];
-        const ativo = i === mesAtual;
-        const div = document.createElement('div');
-        div.className = `border ${ativo ? 'bg-emerald-500/5 border-emerald-500/30' : 'border-slate-200 dark:border-slate-800'} rounded-2xl p-4 text-center hover:bg-slate-50 dark:hover:bg-slate-900/30 transition-all cursor-pointer shadow-sm`;
-        div.onclick = () => abrirPasta(mes);
-        div.innerHTML = `
-            <i data-lucide="${ativo ? 'folder-open' : 'folder'}" class="w-10 h-10 ${ativo ? 'text-emerald-500' : 'text-amber-500'} mx-auto mb-2"></i>
-            <span class="text-xs font-extrabold block text-slate-700 dark:text-slate-200">${String(i+1).padStart(2,'0')} · ${mes}</span>
-            <span class="text-[10px] text-slate-400">${lista.length} nota(s)</span>`;
-        container.appendChild(div);
-    });
-    lucide.createIcons();
+  applyEmpresaToConfig();
+  updateRegimeBadge();
+
+  if (demo) {
+    currentXmlName = 'demo_produtos.xml';
+    produtos = DEMO_PRODUTOS.map(p => ({...p}));
+    renderProducts();
+  }
+
+  loadHistory();
+  lucide.createIcons();
 }
 
-function abrirPasta(mes) {
-    const panel = document.getElementById('folder-panel');
-    document.getElementById('folder-title').textContent = mes;
-    const lista = xmlDatabase[mes] || [];
-    const empty = document.getElementById('folder-empty');
-    const listEl = document.getElementById('folder-list');
-    listEl.innerHTML = '';
-
-    if (lista.length === 0) {
-        empty.classList.remove('hidden');
-    } else {
-        empty.classList.add('hidden');
-        lista.forEach((xml, i) => {
-            const div = document.createElement('div');
-            div.className = 'py-3 flex justify-between items-center text-xs';
-            div.innerHTML = `
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center">
-                        <i data-lucide="file-text" class="w-4 h-4"></i>
-                    </div>
-                    <div>
-                        <h5 class="font-bold text-slate-800 dark:text-white">${xml.name}</h5>
-                        <p class="text-slate-400 text-[10px]">Enviado: ${xml.date} · Custo total: ${fmt(xml.cost)} · ${xml.count} item(ns)</p>
-                    </div>
-                </div>
-                <button onclick="imprimirHistorico('${mes}', ${i})" class="bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition-all">Imprimir</button>`;
-            listEl.appendChild(div);
-        });
-    }
-    panel.classList.remove('hidden');
-    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    lucide.createIcons();
+async function doLogout() {
+  if (sb && !isDemo) await sb.auth.signOut().catch(()=>{});
+  currentUser = null; isDemo = false; empresaData = {}; produtos = [];
+  document.getElementById('app-screen').classList.add('hidden');
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('products-section').classList.add('hidden');
+  setAuthMode('login');
+  lucide.createIcons();
 }
 
-function fecharPasta() {
-    document.getElementById('folder-panel').classList.add('hidden');
+/* ════════════════════════════════════════════════
+   CONFIG
+════════════════════════════════════════════════ */
+function applyEmpresaToConfig() {
+  const set = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = val; };
+  set('cfg-empresa', empresaData.nome || '');
+  set('cfg-cnpj', empresaData.cnpj || '');
+  set('cfg-regime', empresaData.regime || 'SN');
+  set('cfg-sn-anexo', empresaData.sn_anexo || 'I');
+  set('cfg-rba', empresaData.sn_rba || 360000);
+  set('cfg-drive', empresaData.drive_url || '');
+  onRegimeChange();
 }
 
-function renderHistGlobal() {
-    const el = document.getElementById('global-hist');
-    if (!el) return;
-    const entries = [];
-    Object.entries(xmlDatabase).forEach(([mes, lista]) => {
-        lista.forEach(xml => entries.push({ mes, ...xml }));
-    });
-    if (entries.length === 0) {
-        el.innerHTML = '<p class="text-xs text-slate-400 text-center py-6">Nenhum lote processado ainda.</p>';
-        return;
-    }
-    el.innerHTML = '';
-    entries.reverse().forEach(entry => {
-        const div = document.createElement('div');
-        div.className = 'py-4 flex justify-between items-center text-xs';
-        div.innerHTML = `
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center">
-                    <i data-lucide="check-circle-2" class="w-4 h-4"></i>
-                </div>
-                <div>
-                    <h4 class="font-bold text-slate-800 dark:text-white">${entry.name}</h4>
-                    <p class="text-slate-400">Arquivado em ${entry.mes} · ${entry.count} produto(s)</p>
-                </div>
-            </div>
-            <div class="text-right">
-                <span class="font-bold text-slate-700 dark:text-slate-200">${entry.mes} 2026</span>
-                <p class="text-slate-400 text-[10px]">${entry.date}</p>
-            </div>`;
-        el.appendChild(div);
-    });
-    lucide.createIcons();
-}
-
-// ─────────────────────────────────────────────
-// IMPRESSÃO
-// ─────────────────────────────────────────────
-function imprimirLote() {
-    if (resultados.filter(Boolean).length === 0) { toast('Nenhum produto calculado.', 'danger'); return; }
-    triggerPrint(xmlNome, new Date().toLocaleString('pt-BR'), resultados.filter(Boolean));
-}
-
-function imprimirHistorico(mes, i) {
-    const entry = xmlDatabase[mes]?.[i];
-    if (!entry) return;
-    triggerPrint(entry.name, entry.date, entry.dados || []);
-}
-
-function triggerPrint(arquivo, data, dataset) {
-    const regime = localStorage.getItem('gf_regime') || 'comparativo';
-    const regimeLabels = {comparativo:'Comparativo',mei:'MEI',sn:'Simples Nacional',lp:'Lucro Presumido',lr:'Lucro Real'};
-    const empresa = currentUser?.email?.split('@')[0] || 'Empresa';
-
-    document.getElementById('pr-date').textContent   = `Emissão: ${data}`;
-    document.getElementById('pr-empresa').textContent = empresa;
-    document.getElementById('pr-regime').textContent  = regimeLabels[regime] || regime;
-    document.getElementById('pr-arquivo').textContent = arquivo;
-    document.getElementById('pr-margem').textContent  = `${dataset[0]?.['Margem %'] || 0}%`;
-
-    const tbody = document.getElementById('pr-body');
-    tbody.innerHTML = '';
-    let totalVenda = 0;
-
-    dataset.forEach(item => {
-        let preco = parseFloat(item['Preco MEI'] || 0);
-        if      (regime === 'sn') preco = parseFloat(item['Preco Simples'] || 0);
-        else if (regime === 'lp') preco = parseFloat(item['Preco Presumido'] || 0);
-        else if (regime === 'lr') preco = parseFloat(item['Preco Real'] || 0);
-        else preco = parseFloat(item['Preco Simples'] || item['Preco MEI'] || 0);
-        totalVenda += preco;
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td style="border:1px solid #000;padding:7px 8px;"><strong>${item.Produto}</strong></td>
-            <td style="border:1px solid #000;padding:7px 8px;font-family:monospace;">${item.NCM}</td>
-            <td style="border:1px solid #000;padding:7px 8px;font-family:monospace;">R$ ${parseFloat(item['Custo Fabrica']).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
-            <td style="border:1px solid #000;padding:7px 8px;font-family:monospace;">R$ ${parseFloat(item['Custo Efetivo']).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
-            <td style="border:1px solid #000;padding:7px 8px;text-align:center;">${item['Frete %']}%</td>
-            <td style="border:1px solid #000;padding:7px 8px;text-align:center;">${item['Margem %']}%</td>
-            <td style="border:1px solid #000;padding:7px 8px;font-weight:900;background:#f0fdf4;">R$ ${preco.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
-            <td style="border:1px solid #000;padding:7px 8px;border-left:2px dashed #000;"> </td>`;
-        tbody.appendChild(tr);
-    });
-
-    document.getElementById('pr-total').textContent = `Total estimado de vendas: R$ ${totalVenda.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
-    window.print();
-}
-
-// ─────────────────────────────────────────────
-// EXPORTAR CSV
-// ─────────────────────────────────────────────
-function exportarCSV() {
-    const dados = resultados.filter(Boolean);
-    if (dados.length === 0) { toast('Nenhum dado para exportar.', 'danger'); return; }
-    const headers = ['Produto','NCM','Custo Fabrica','Frete %','ICMS Entrada %','Custo Efetivo','Margem %','Preco MEI','Preco Simples','Preco Presumido','Preco Real'];
-    let csv = '﻿' + headers.join(';') + '\n';
-    dados.forEach(r => { csv += headers.map(h => `"${r[h] ?? ''}"`).join(';') + '\n'; });
-    const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url; a.download = `gestorfiscal_${xmlNome.replace('.xml','')}.csv`;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    toast('CSV exportado com sucesso!');
-}
-
-// ─────────────────────────────────────────────
-// DRIVE
-// ─────────────────────────────────────────────
-function abrirDrive() {
-    const url = localStorage.getItem('gf_drive');
-    if (url) window.open(url, '_blank');
-    else toast('Configure o link do Drive em Configurações.', 'danger');
-}
-
-function updateDriveBadge() {
-    const url = localStorage.getItem('gf_drive');
-    document.getElementById('drive-badge').classList.toggle('hidden', !url);
-}
-
-// ─────────────────────────────────────────────
-// CONFIGURAÇÕES
-// ─────────────────────────────────────────────
 function onRegimeChange() {
-    const v = document.getElementById('cfg-regime').value;
-    document.getElementById('sn-config').classList.toggle('hidden', v !== 'sn');
+  const r = document.getElementById('cfg-regime').value;
+  document.getElementById('cfg-sn-block').classList.toggle('hidden', r !== 'SN');
+  empresaData.regime = r;
+  updateRegimeBadge();
 }
 
-function salvarRegime() {
-    const v = document.getElementById('cfg-regime').value;
-    localStorage.setItem('gf_regime', v);
-    localStorage.setItem('gf_sn_anexo', document.getElementById('cfg-sn-anexo').value);
-    localStorage.setItem('gf_sn_rba',   document.getElementById('cfg-sn-rba').value);
+function updateRegimeBadge() {
+  const r = empresaData.regime || 'SN';
+  const labels = { MEI:'MEI', SN:'Simples Nacional', LP:'Lucro Presumido', LR:'Lucro Real' };
+  document.getElementById('regime-badge-text').textContent = labels[r] || r;
+  const det = document.getElementById('regime-details-badge');
+  if (r === 'SN') {
+    det.textContent = `Anexo ${empresaData.sn_anexo||'I'} · RBT12 R$ ${fmtNum(empresaData.sn_rba||360000)}`;
+    det.classList.remove('hidden');
+  } else { det.classList.add('hidden'); }
+  document.getElementById('pr-regime').textContent = labels[r] || r;
+}
 
-    const labels = {comparativo:'Comparativo',mei:'MEI',sn:'Simples Nac.',lp:'L. Presumido',lr:'Lucro Real'};
-    document.getElementById('regime-badge').textContent = labels[v] || 'MEI';
-    document.getElementById('dd-regime').textContent = `Regime: ${labels[v] || '—'}`;
+async function saveConfig() {
+  empresaData.nome     = document.getElementById('cfg-empresa').value.trim();
+  empresaData.cnpj     = document.getElementById('cfg-cnpj').value.trim();
+  empresaData.regime   = document.getElementById('cfg-regime').value;
+  empresaData.sn_anexo = document.getElementById('cfg-sn-anexo').value;
+  empresaData.sn_rba   = parseFloat(document.getElementById('cfg-rba').value) || 360000;
+  empresaData.drive_url = document.getElementById('cfg-drive').value.trim();
 
-    if (supabaseClient && currentUser) {
-        supabaseClient.from('empresas').upsert({
-            user_id: currentUser.id, nome_empresa: currentUser.email?.split('@')[0] || 'Empresa',
-            regime: v, sn_anexo: document.getElementById('cfg-sn-anexo').value,
-            sn_rba: parseFloat(document.getElementById('cfg-sn-rba').value),
-        }, { onConflict: 'user_id' });
+  document.getElementById('user-empresa-label').textContent = empresaData.nome;
+  updateRegimeBadge();
+
+  if (!isDemo && sb && currentUser) {
+    try {
+      const { data: ex } = await sb.from('empresas').select('id').eq('user_id', currentUser.id).single();
+      if (ex?.id) {
+        await sb.from('empresas').update({ nome:empresaData.nome, cnpj:empresaData.cnpj, regime:empresaData.regime, sn_anexo:empresaData.sn_anexo, sn_rba:empresaData.sn_rba }).eq('id', ex.id);
+      } else {
+        await sb.from('empresas').insert({ user_id:currentUser.id, ...empresaData });
+      }
+    } catch(e) { console.warn(e); }
+  }
+  toast('Configurações salvas!', 'success');
+}
+
+function openDrive() {
+  const url = document.getElementById('cfg-drive').value.trim();
+  if (url) window.open(url, '_blank');
+  else toast('Cole o link do Google Drive primeiro.', 'warning');
+}
+
+/* ════════════════════════════════════════════════
+   XML PROCESSING
+════════════════════════════════════════════════ */
+function handleXmlFile(e) { if (e.target.files[0]) processXmlFile(e.target.files[0]); }
+
+function processXmlFile(file) {
+  if (isDemo) { toast('Upload bloqueado no modo demo.', 'warning'); return; }
+  if (!file.name.endsWith('.xml')) { toast('Selecione um arquivo .xml', 'error'); return; }
+  currentXmlName = file.name;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const xml = new DOMParser().parseFromString(e.target.result, 'text/xml');
+      const errs = xml.querySelector('parsererror');
+      if (errs) throw new Error('XML inválido');
+      const dets = [...xml.querySelectorAll('det')];
+      if (!dets.length) { toast('Nenhum item encontrado no XML.', 'warning'); return; }
+      produtos = dets.map(det => ({
+        descricao: det.querySelector('xProd')?.textContent || '—',
+        ncm:       det.querySelector('NCM')?.textContent || '—',
+        qCom:      parseFloat(det.querySelector('qCom')?.textContent || 1),
+        vUnCom:    parseFloat(det.querySelector('vUnCom')?.textContent || 0),
+      }));
+      toast(`${produtos.length} produto(s) carregado(s)!`, 'success');
+      renderProducts();
+    } catch(err) { toast('Erro ao processar XML: ' + err.message, 'error'); }
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+/* ════════════════════════════════════════════════
+   TAX CALCULATION
+════════════════════════════════════════════════ */
+function calcAliquota(regime, anexo, rba) {
+  if (regime === 'MEI') return 0;
+  if (regime === 'LP') {
+    return LP.pis + LP.cofins + LP.icms + (LP.irpj_base * LP.irpj_rate) + (LP.csll_base * LP.csll_rate);
+  }
+  if (regime === 'LR') return LR.pis + LR.cofins + LR.icms;
+  // SN
+  const tab = SN_TABELAS[anexo || 'I'];
+  if (!tab || !rba) return 0.073;
+  const faixa = tab.find(f => rba <= f.ate) || tab[tab.length - 1];
+  return Math.max(0, (rba * faixa.nom - faixa.ded) / rba);
+}
+
+function calcPreco(custo, frete, icmsEnt, aliquota, margem) {
+  const custoEf = custo * (1 + frete / 100 + icmsEnt / 100);
+  const div = 1 - aliquota - margem / 100;
+  if (div <= 0) return custoEf * 2;
+  return custoEf / div;
+}
+
+/* ════════════════════════════════════════════════
+   RENDER
+════════════════════════════════════════════════ */
+function renderProducts() {
+  document.getElementById('products-section').classList.remove('hidden');
+  document.getElementById('empty-state').classList.add('hidden');
+  document.getElementById('xml-filename-label').textContent = currentXmlName;
+  document.getElementById('produtos-count').textContent = `${produtos.length} item(s)`;
+  document.getElementById('pr-arquivo').textContent = currentXmlName;
+
+  const tbody = document.getElementById('products-tbody');
+  tbody.innerHTML = '';
+
+  const regime = empresaData.regime || 'SN';
+  const anexo  = empresaData.sn_anexo || 'I';
+  const rba    = empresaData.sn_rba || 360000;
+  const alq    = calcAliquota(regime, anexo, rba);
+  const margem = parseFloat(document.getElementById('cfg-margem').value) || 30;
+  const frete  = parseFloat(document.getElementById('cfg-frete').value)  || 2;
+  const icmsE  = parseFloat(document.getElementById('cfg-icms-entrada').value) || 12;
+
+  let totCusto = 0, totVenda = 0;
+
+  produtos.forEach((p, i) => {
+    const m = p.margemCustom ?? margem;
+    const f = p.freteCustom  ?? frete;
+    const preco = calcPreco(p.vUnCom, f, icmsE, alq, m);
+    const custoEf = p.vUnCom * (1 + f/100 + icmsE/100);
+    totCusto += custoEf * p.qCom;
+    totVenda += preco * p.qCom;
+
+    const tr = document.createElement('tr');
+    tr.className = 'product-row transition-colors';
+    tr.innerHTML = `
+      <td class="px-3 py-2.5 font-medium text-slate-700 dark:text-slate-200 max-w-[180px]">
+        <div class="truncate" title="${p.descricao}">${p.descricao}</div>
+      </td>
+      <td class="px-3 py-2.5 text-center text-slate-500 dark:text-slate-400 font-mono text-[10px]">${p.ncm}</td>
+      <td class="px-3 py-2.5 text-center">${p.qCom}</td>
+      <td class="px-3 py-2.5 text-center">${fmtBRL(p.vUnCom)}</td>
+      <td class="px-3 py-2.5 text-center text-slate-500">${fmtBRL(custoEf)}</td>
+      <td class="px-3 py-2.5 text-center">
+        <input type="number" value="${f}" min="0" max="50" step="0.1" onchange="setProdFrete(${i},this.value)"
+          class="w-14 text-center px-1 py-1 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:outline-none">
+      </td>
+      <td class="px-3 py-2.5 text-center">
+        <input type="number" value="${m}" min="0" max="300" step="0.5" onchange="setProdMargem(${i},this.value)"
+          class="w-16 text-center px-1 py-1 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:outline-none">
+      </td>
+      <td class="px-3 py-2.5 text-center text-slate-500">${(alq*100).toFixed(2)}%</td>
+      <td class="px-3 py-2.5 text-center font-extrabold text-emerald-600 dark:text-emerald-400 text-sm">${fmtBRL(preco)}</td>
+      <td class="px-3 py-2.5 text-center">
+        <input type="number" placeholder="—" onchange="setProdAjuste(${i},this.value)"
+          class="w-20 text-center px-1 py-1 text-xs bg-slate-50 dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-600 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          ${p.ajuste ? `value="${p.ajuste}"` : ''}>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('sum-qty').textContent   = produtos.length;
+  document.getElementById('sum-custo').textContent  = fmtBRL(totCusto);
+  document.getElementById('sum-venda').textContent  = fmtBRL(totVenda);
+  document.getElementById('pr-margem').textContent  = margem + '%';
+
+  if (!produtos.length) {
+    document.getElementById('products-section').classList.add('hidden');
+    document.getElementById('empty-state').classList.remove('hidden');
+  }
+}
+
+function setProdFrete(i, v) { produtos[i].freteCustom = parseFloat(v)||0; renderProducts(); }
+function setProdMargem(i, v){ produtos[i].margemCustom = parseFloat(v)||0; renderProducts(); }
+function setProdAjuste(i, v){ produtos[i].ajuste = parseFloat(v)||null; }
+
+function recalcAll() { renderProducts(); }
+
+/* ════════════════════════════════════════════════
+   HISTORY
+════════════════════════════════════════════════ */
+async function saveToHistory() {
+  if (isDemo) { toast('Salvar desabilitado no modo demo.', 'warning'); return; }
+  if (!sb || !currentUser || !produtos.length) return;
+  try {
+    const regime = empresaData.regime || 'SN';
+    const margem = parseFloat(document.getElementById('cfg-margem').value) || 30;
+    const frete  = parseFloat(document.getElementById('cfg-frete').value)  || 2;
+    await sb.from('notas_fiscais').insert({
+      user_id: currentUser.id,
+      arquivo: currentXmlName, regime, margem, frete,
+      produtos: JSON.stringify(produtos)
+    });
+    toast('Salvo no histórico!', 'success');
+    loadHistory();
+  } catch(e) { toast('Erro ao salvar: ' + e.message, 'error'); }
+}
+
+async function loadHistory() {
+  const list = document.getElementById('history-list');
+  if (isDemo) {
+    list.innerHTML = '<p class="text-xs text-slate-400 text-center py-8">Histórico disponível apenas em conta registrada.</p>';
+    return;
+  }
+  if (!sb || !currentUser) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-8">Faça login para ver o histórico.</p>'; return; }
+
+  try {
+    const { data, error } = await sb.from('notas_fiscais').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(20);
+    if (error) throw error;
+    if (!data?.length) {
+      list.innerHTML = '<p class="text-xs text-slate-400 text-center py-8">Nenhuma análise salva ainda.</p>';
+      return;
     }
-
-    if (produtos.length > 0) calcular();
-    toast('Regime salvo com sucesso!');
+    list.innerHTML = data.map(item => `
+      <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <div class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">${item.arquivo || '—'}</div>
+          <div class="text-[10px] text-slate-400 mt-0.5">${item.regime} · Margem ${item.margem}% · ${new Date(item.created_at).toLocaleDateString('pt-BR')}</div>
+        </div>
+        <button onclick="restoreHistory('${item.id}')" class="shrink-0 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-lg transition-all">Abrir</button>
+      </div>
+    `).join('');
+  } catch(e) {
+    list.innerHTML = `<p class="text-xs text-red-400 text-center py-8">Erro ao carregar histórico.</p>`;
+  }
 }
 
-function salvarDrive() {
-    const url = document.getElementById('cfg-drive').value.trim();
-    localStorage.setItem('gf_drive', url);
-    if (supabaseClient && currentUser && url) {
-        supabaseClient.from('empresas').upsert({ user_id: currentUser.id, nome_empresa: currentUser.email?.split('@')[0] || 'Empresa', drive_url: url }, { onConflict: 'user_id' });
-    }
-    updateDriveBadge();
-    toast(url ? 'Link do Drive salvo!' : 'Link removido.', url ? 'success' : 'info');
+async function restoreHistory(id) {
+  try {
+    const { data } = await sb.from('notas_fiscais').select('*').eq('id', id).single();
+    if (!data) return;
+    currentXmlName = data.arquivo || 'historico.xml';
+    produtos = typeof data.produtos === 'string' ? JSON.parse(data.produtos) : (data.produtos || []);
+    document.getElementById('cfg-margem').value = data.margem || 30;
+    document.getElementById('cfg-frete').value  = data.frete  || 2;
+    if (data.regime) { document.getElementById('cfg-regime').value = data.regime; onRegimeChange(); }
+    renderProducts();
+    switchTab(0);
+    toast('Análise carregada!', 'success');
+  } catch(e) { toast('Erro ao restaurar.', 'error'); }
 }
 
-function salvarSupabase() {
-    const url = document.getElementById('cfg-sb-url').value.trim();
-    const key = document.getElementById('cfg-sb-key').value.trim();
-    if (!url || !key) { toast('Preencha URL e Anon Key.', 'danger'); return; }
-    localStorage.setItem('gf_sb_url', url);
-    localStorage.setItem('gf_sb_key', key);
-    const ok = initSupabase(url, key);
-    if (ok) {
-        document.getElementById('sb-status').classList.remove('hidden');
-        document.getElementById('supabase-warn').classList.add('hidden');
-        toast('Supabase conectado! Faça login novamente.', 'success');
-        setTimeout(() => { handleLogout(); }, 1500);
-    } else {
-        toast('Falha ao conectar. Verifique as credenciais.', 'danger');
-    }
+/* ════════════════════════════════════════════════
+   PRINT
+════════════════════════════════════════════════ */
+function printReport() {
+  if (!produtos.length) { toast('Nenhum produto para imprimir.', 'warning'); return; }
+  document.getElementById('pr-date').textContent = 'Emitido em: ' + new Date().toLocaleDateString('pt-BR');
+
+  const regime = empresaData.regime || 'SN';
+  const anexo  = empresaData.sn_anexo || 'I';
+  const rba    = empresaData.sn_rba || 360000;
+  const alq    = calcAliquota(regime, anexo, rba);
+  const margem = parseFloat(document.getElementById('cfg-margem').value) || 30;
+  const frete  = parseFloat(document.getElementById('cfg-frete').value)  || 2;
+  const icmsE  = parseFloat(document.getElementById('cfg-icms-entrada').value) || 12;
+
+  let total = 0;
+  const tbody = document.getElementById('pr-body');
+  tbody.innerHTML = '';
+  produtos.forEach((p, i) => {
+    const m = p.margemCustom ?? margem;
+    const f = p.freteCustom  ?? frete;
+    const preco = p.ajuste || calcPreco(p.vUnCom, f, icmsE, alq, m);
+    const custoEf = p.vUnCom * (1 + f/100 + icmsE/100);
+    total += preco * p.qCom;
+    const bg = i % 2 === 0 ? '#fff' : '#f8fafc';
+    tbody.innerHTML += `
+      <tr style="background:${bg};">
+        <td style="border:1px solid #e2e8f0;padding:6px 8px;max-width:220px;">${p.descricao}</td>
+        <td style="border:1px solid #e2e8f0;padding:6px 8px;text-align:center;font-family:monospace;">${p.ncm}</td>
+        <td style="border:1px solid #e2e8f0;padding:6px 8px;text-align:right;">${fmtBRL(p.vUnCom)}</td>
+        <td style="border:1px solid #e2e8f0;padding:6px 8px;text-align:right;">${fmtBRL(custoEf)}</td>
+        <td style="border:1px solid #e2e8f0;padding:6px 8px;text-align:center;">${f}%</td>
+        <td style="border:1px solid #e2e8f0;padding:6px 8px;text-align:center;">${m}%</td>
+        <td style="border:1px solid #e2e8f0;padding:6px 8px;text-align:right;font-weight:900;background:#f0fdf4;color:#166534;">${fmtBRL(preco)}</td>
+        <td style="border:1px dashed #000;border-left:2px dashed #000;padding:6px 8px;text-align:right;">${p.ajuste ? fmtBRL(p.ajuste) : '—'}</td>
+      </tr>`;
+  });
+  document.getElementById('pr-total').textContent = 'Total sugerido: ' + fmtBRL(total);
+  window.print();
 }
 
-// ─────────────────────────────────────────────
-// UTILITÁRIOS
-// ─────────────────────────────────────────────
-function fmt(v) {
-    return `R$ ${(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+/* ════════════════════════════════════════════════
+   TABS
+════════════════════════════════════════════════ */
+function switchTab(n) {
+  const panes = document.querySelectorAll('.tab-pane');
+  panes.forEach((p, i) => {
+    p.className = 'tab-pane ' + (i === n ? 'active' : (i < n ? 'left' : 'right'));
+  });
+  const navBtns = [0,1,2].map(i => document.getElementById('nav-' + i));
+  navBtns.forEach((b, i) => {
+    b.className = i === n
+      ? 'px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all bg-emerald-600 text-white'
+      : 'px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800';
+  });
+  activeTab = n;
+  if (n === 1) loadHistory();
 }
 
-function toast(msg, type = 'success') {
-    const c = document.getElementById('toast-container');
-    const t = document.createElement('div');
-    const colors = {
-        success: 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950 dark:border-emerald-800 dark:text-emerald-300',
-        danger:  'bg-red-50 border-red-200 text-red-800 dark:bg-red-950 dark:border-red-800 dark:text-red-300',
-        info:    'bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300',
-    };
-    const icons = { success:'check-circle', danger:'alert-triangle', info:'info' };
-    t.className = `flex items-center gap-2 p-3.5 rounded-2xl shadow-lg border text-xs font-semibold min-w-[220px] max-w-xs transform translate-y-2 opacity-0 transition-all duration-300 ${colors[type] || colors.success}`;
-    t.innerHTML = `<i data-lucide="${icons[type]||'info'}" class="w-4 h-4 shrink-0"></i><span>${msg}</span>`;
-    c.appendChild(t);
+/* ════════════════════════════════════════════════
+   THEME
+════════════════════════════════════════════════ */
+function toggleTheme() {
+  const d = document.documentElement;
+  const isDark = d.classList.contains('dark');
+  d.classList.toggle('dark', !isDark);
+  localStorage.setItem('gf_theme', isDark ? 'light' : 'dark');
+}
+
+/* ════════════════════════════════════════════════
+   UTILS
+════════════════════════════════════════════════ */
+function fmtBRL(n) {
+  return (n||0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
+}
+function fmtNum(n) {
+  return (n||0).toLocaleString('pt-BR');
+}
+
+function maskCNPJ(el) {
+  let v = el.value.replace(/\D/g,'').slice(0,14);
+  if (v.length > 12) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})/,'$1.$2.$3/$4-$5');
+  else if (v.length > 8) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{0,4})/,'$1.$2.$3/$4');
+  else if (v.length > 5) v = v.replace(/^(\d{2})(\d{3})(\d{0,3})/,'$1.$2.$3');
+  else if (v.length > 2) v = v.replace(/^(\d{2})(\d{0,3})/,'$1.$2');
+  el.value = v;
+}
+
+function setBtnLoading(btnId, iconId, labelId, loading, text) {
+  const btn   = document.getElementById(btnId);
+  const icon  = document.getElementById(iconId);
+  const label = document.getElementById(labelId);
+  if (!btn) return;
+  btn.disabled = loading;
+  if (loading) {
+    btn.classList.add('opacity-70', 'cursor-wait');
+    if (icon) icon.outerHTML = `<svg id="${iconId}" class="spinner w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>`;
+    if (label) label.textContent = text || 'Aguarde...';
+  } else {
+    btn.classList.remove('opacity-70', 'cursor-wait');
+    if (label) label.textContent = btnId === 'btn-login' ? 'Entrar' : 'Criar Conta';
     lucide.createIcons();
-    requestAnimationFrame(() => { t.classList.remove('translate-y-2','opacity-0'); });
-    setTimeout(() => {
-        t.classList.add('translate-y-2','opacity-0');
-        setTimeout(() => t.remove(), 300);
-    }, 4000);
+  }
+}
+
+function translateAuthError(msg) {
+  msg = msg.toLowerCase();
+  if (msg.includes('invalid login') || msg.includes('invalid credentials')) return 'E-mail ou senha incorretos.';
+  if (msg.includes('email not confirmed')) return 'Confirme seu e-mail antes de entrar.';
+  if (msg.includes('user already registered') || msg.includes('already registered')) return 'Este e-mail já está cadastrado.';
+  if (msg.includes('network') || msg.includes('fetch')) return 'Erro de conexão. Use o arquivo .bat para abrir via servidor local.';
+  if (msg.includes('password')) return 'Senha deve ter pelo menos 6 caracteres.';
+  if (msg.includes('email')) return 'E-mail inválido.';
+  return msg.charAt(0).toUpperCase() + msg.slice(1);
+}
+
+function toast(msg, type = 'info') {
+  const colors = {
+    success: 'bg-emerald-600 text-white',
+    error:   'bg-red-600 text-white',
+    warning: 'bg-amber-500 text-black',
+    info:    'bg-slate-800 text-white',
+  };
+  const icons = { success:'check-circle', error:'x-circle', warning:'alert-triangle', info:'info' };
+  const el = document.createElement('div');
+  el.className = `flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg text-xs font-bold ${colors[type]} cursor-pointer select-none`;
+  el.style.cssText = 'animation:slideIn 0.3s ease;max-width:340px;';
+  el.innerHTML = `<i data-lucide="${icons[type]}" class="w-4 h-4 shrink-0"></i><span>${msg}</span>`;
+  el.onclick = () => el.remove();
+  document.getElementById('toast-container').appendChild(el);
+  lucide.createIcons();
+  setTimeout(() => { el.style.animation = 'slideOut 0.3s ease forwards'; setTimeout(() => el.remove(), 300); }, 4000);
 }
 </script>
 </body>
