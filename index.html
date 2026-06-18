@@ -1551,10 +1551,12 @@ function goToStripe() {
     toast('Links do Stripe ainda não configurados. Contate o administrador.', 'warning');
     return;
   }
-  const successUrl = encodeURIComponent(window.location.href.split('?')[0] + '?payment_success=1');
-  window.open(`${link}?client_reference_id=${currentUser.id}&success_url=${successUrl}`, '_blank');
+  // client_reference_id é passado via query string — Stripe injeta no checkout.session.completed
+  window.open(`${link}?client_reference_id=${currentUser.id}`, '_blank');
   document.getElementById('payment-verifying').classList.remove('hidden');
-  document.getElementById('btn-pay').textContent = 'Aguardando pagamento…';
+  document.getElementById('btn-pay').classList.add('opacity-50', 'pointer-events-none');
+  document.getElementById('btn-pay').innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 spinner"></i> Aguardando pagamento…';
+  lucide.createIcons();
   startStatusPolling();
 }
 
@@ -1653,32 +1655,50 @@ function renderAdminUsers(filter) {
   }
 
   list.innerHTML = users.map(u => `
-    <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex items-center justify-between gap-3">
-      <div class="min-w-0">
-        <div class="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">${u.nome || '—'}</div>
-        <div class="text-[11px] text-slate-400 mt-0.5">${u.cnpj || 'CNPJ não informado'} · ${REGIME_LABEL[u.regime] || u.regime || '—'}</div>
-        <div class="mt-1.5 flex items-center gap-2">
-          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${STATUS_STYLE[u.status] || ''}">${STATUS_LABEL[u.status] || u.status}</span>
-          <span class="text-[10px] text-slate-400">${new Date(u.created_at).toLocaleDateString('pt-BR')}</span>
+    <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <div class="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">${u.nome || '—'}</div>
+          <div class="text-[11px] text-slate-400 mt-0.5">${u.cnpj || 'CNPJ não informado'} · ${REGIME_LABEL[u.regime] || u.regime || '—'}</div>
+          <div class="mt-1.5 flex items-center gap-2 flex-wrap">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${STATUS_STYLE[u.status] || ''}">${STATUS_LABEL[u.status] || u.status}</span>
+            <span class="text-[10px] text-slate-400">${new Date(u.created_at).toLocaleDateString('pt-BR')}</span>
+            ${u.paid_at ? `<span class="text-[10px] text-emerald-500 font-semibold">Pago em ${new Date(u.paid_at).toLocaleDateString('pt-BR')}</span>` : ''}
+          </div>
+        </div>
+        <div class="flex flex-col gap-1.5 shrink-0 items-end">
+
+          ${u.status === 'pending' ? `
+            <button onclick="adminActivate('${u.user_id}','pending_payment')"
+              class="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-all whitespace-nowrap flex items-center gap-1">
+              ✅ Liberar para pagamento
+            </button>` : ''}
+
+          ${u.status === 'pending_payment' ? `
+            <button onclick="adminActivate('${u.user_id}','active')"
+              class="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-blue-600 hover:bg-blue-700 text-white transition-all whitespace-nowrap flex items-center gap-1">
+              ⚡ Ativar manualmente
+            </button>
+            <span class="text-[10px] text-slate-400 text-right">ou aguarde o pagamento<br>ser confirmado pelo Stripe</span>` : ''}
+
+          ${u.status === 'active' ? `
+            <span class="text-[10px] text-emerald-500 font-bold">✓ Conta ativa</span>
+            <button onclick="adminActivate('${u.user_id}','pending')"
+              class="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-red-100 dark:hover:bg-red-950/50 hover:text-red-500 transition-all whitespace-nowrap">
+              Suspender
+            </button>` : ''}
+
         </div>
       </div>
-      <div class="flex flex-col gap-1.5 shrink-0">
-        ${u.status === 'pending' ? `
-          <button onclick="adminActivate('${u.user_id}','pending_payment')"
-            class="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-all whitespace-nowrap">
-            Liberar Pagamento
-          </button>` : ''}
-        ${u.status === 'pending_payment' ? `
-          <button onclick="adminActivate('${u.user_id}','active')"
-            class="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-blue-600 hover:bg-blue-700 text-white transition-all whitespace-nowrap">
-            Ativar Direto
-          </button>` : ''}
-        ${u.status === 'active' ? `
-          <button onclick="adminActivate('${u.user_id}','pending')"
-            class="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-red-100 dark:hover:bg-red-950 hover:text-red-600 transition-all whitespace-nowrap">
-            Suspender
-          </button>` : ''}
-      </div>
+
+      ${u.status === 'pending' ? `
+        <div class="mt-3 p-2.5 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-900/40">
+          <p class="text-[10px] text-amber-600 dark:text-amber-400">
+            <strong>Próximo passo:</strong> Clique em "Liberar para pagamento" para liberar o link de assinatura para este usuário.
+            Após o pagamento, o Stripe ativa automaticamente. Se precisar ativar sem pagamento, use "⚡ Ativar manualmente".
+          </p>
+        </div>` : ''}
+
     </div>`).join('');
   lucide.createIcons();
 }
