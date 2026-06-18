@@ -178,6 +178,9 @@ input[type=range] { accent-color:#10b981; }
         <i data-lucide="log-in" class="w-4 h-4" id="icon-login"></i>
         <span id="label-login">Entrar</span>
       </button>
+      <div class="text-center">
+        <button onclick="setAuthMode('recover')" class="text-xs text-emerald-500 hover:text-emerald-400 font-semibold transition-colors">Esqueci minha senha</button>
+      </div>
       <div class="relative flex items-center gap-3 py-1">
         <div class="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
         <span class="text-[10px] text-slate-400 font-semibold">OU</span>
@@ -187,6 +190,34 @@ input[type=range] { accent-color:#10b981; }
         <i data-lucide="play-circle" class="w-4 h-4"></i>
         <span>Experimentar Demo Gratuito</span>
       </button>
+    </div>
+
+    <!-- ── RECUPERAR SENHA ── -->
+    <div id="panel-recover" class="hidden space-y-4">
+      <div class="text-center mb-2">
+        <div class="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-950/40 flex items-center justify-center mx-auto mb-3">
+          <i data-lucide="key-round" class="w-6 h-6 text-blue-500"></i>
+        </div>
+        <h3 class="text-sm font-extrabold text-slate-800 dark:text-white">Recuperar senha</h3>
+        <p class="text-xs text-slate-400 mt-1">Digite seu e-mail e enviaremos um link para redefinir.</p>
+      </div>
+      <div>
+        <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">E-mail</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><i data-lucide="mail" class="w-4 h-4"></i></span>
+          <input type="email" id="recover-email" autocomplete="email" placeholder="seuemail@empresa.com"
+            class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+        </div>
+      </div>
+      <button onclick="doSendRecovery()" id="btn-recover" class="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm transition-all flex items-center justify-center gap-2">
+        <i data-lucide="send" class="w-4 h-4" id="icon-recover"></i>
+        <span id="label-recover">Enviar link de recuperação</span>
+      </button>
+      <div class="text-center">
+        <button onclick="setAuthMode('login')" class="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-semibold transition-colors flex items-center gap-1 mx-auto">
+          <i data-lucide="arrow-left" class="w-3 h-3"></i> Voltar para o login
+        </button>
+      </div>
     </div>
 
     <!-- ── CADASTRO MULTI-STEP ── -->
@@ -370,6 +401,46 @@ input[type=range] { accent-color:#10b981; }
     <tr><td style="padding:6px 8px;border:1px solid #e2e8f0;background:#f8fafc;font-weight:600;">Alíquota Estimada</td><td style="padding:6px 8px;border:1px solid #e2e8f0;font-weight:700;" id="ppc-aliquota">—</td></tr>
   </table>
   <div style="margin-top:16px;font-size:9px;color:#94a3b8;">GESTORFISCAL © 2026 — Triagem e Precificação Tributária. Este documento não substitui assessoria fiscal.</div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     TELA: REDEFINIR SENHA
+══════════════════════════════════════════════ -->
+<div id="reset-screen" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-100 dark:bg-[#020617] px-4 no-print">
+  <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-3xl p-8 max-w-sm w-full shadow-2xl anim-up relative overflow-hidden">
+    <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-700"></div>
+
+    <div class="text-center mb-6">
+      <div class="w-14 h-14 rounded-2xl bg-blue-100 dark:bg-blue-950/40 flex items-center justify-center mx-auto mb-3">
+        <i data-lucide="lock-keyhole" class="w-7 h-7 text-blue-500"></i>
+      </div>
+      <h2 class="text-xl font-extrabold text-slate-800 dark:text-white">Nova senha</h2>
+      <p class="text-xs text-slate-400 mt-1">Escolha uma senha segura para sua conta.</p>
+    </div>
+
+    <div class="space-y-4">
+      <div>
+        <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Nova senha</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><i data-lucide="lock" class="w-4 h-4"></i></span>
+          <input type="password" id="reset-password" placeholder="Mínimo 6 caracteres"
+            class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+        </div>
+      </div>
+      <div>
+        <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Confirmar senha</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><i data-lucide="lock" class="w-4 h-4"></i></span>
+          <input type="password" id="reset-password-confirm" placeholder="Repita a senha"
+            class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+        </div>
+      </div>
+      <button onclick="doResetPassword()" id="btn-reset" class="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20">
+        <i data-lucide="check" class="w-4 h-4" id="icon-reset"></i>
+        <span id="label-reset">Salvar nova senha</span>
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- ══════════════════════════════════════════════
@@ -1149,6 +1220,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   try {
     sb = window.supabase.createClient(GF_SB_URL, GF_SB_KEY);
+
+    // Detecta link de recuperação de senha no hash da URL
+    sb.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        hideAllScreens();
+        document.getElementById('reset-screen').classList.remove('hidden');
+        lucide.createIcons();
+      }
+    });
+
     const { data: { session } } = await sb.auth.getSession();
     if (session) {
       await afterLogin(session.user);
@@ -1170,16 +1251,24 @@ document.addEventListener('DOMContentLoaded', async () => {
    AUTH UI
 ════════════════════════════════════════════════ */
 function setAuthMode(mode) {
-  const isLogin = mode === 'login';
+  const isLogin   = mode === 'login';
+  const isSignup  = mode === 'signup';
+  const isRecover = mode === 'recover';
+
   document.getElementById('tab-login-btn').className = isLogin
     ? 'flex-1 py-2 text-xs font-bold rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm transition-all'
     : 'flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 dark:text-slate-400 transition-all';
-  document.getElementById('tab-signup-btn').className = !isLogin
+  document.getElementById('tab-signup-btn').className = isSignup
     ? 'flex-1 py-2 text-xs font-bold rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm transition-all'
     : 'flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 dark:text-slate-400 transition-all';
-  document.getElementById('panel-login').classList.toggle('hidden', !isLogin);
-  document.getElementById('panel-signup').classList.toggle('hidden', isLogin);
-  if (!isLogin) goStep(1);
+
+  document.getElementById('panel-login').classList.toggle('hidden',  !isLogin);
+  document.getElementById('panel-signup').classList.toggle('hidden', !isSignup);
+  document.getElementById('panel-recover').classList.toggle('hidden', !isRecover);
+  document.getElementById('auth-tabs').classList.toggle('hidden', isRecover);
+
+  if (isSignup) goStep(1);
+  if (isRecover) setTimeout(() => document.getElementById('recover-email')?.focus(), 100);
 }
 
 function showLogin() {
@@ -1347,10 +1436,49 @@ function routeByStatus() {
 }
 
 function hideAllScreens() {
-  ['login-screen','pending-screen','payment-screen','admin-screen','app-screen'].forEach(id => {
+  ['login-screen','reset-screen','pending-screen','payment-screen','admin-screen','app-screen'].forEach(id => {
     document.getElementById(id)?.classList.add('hidden');
   });
   stopStatusPolling();
+}
+
+/* ─── RECUPERAÇÃO DE SENHA ────────────────────── */
+async function doSendRecovery() {
+  const email = document.getElementById('recover-email').value.trim();
+  if (!email) { toast('Digite seu e-mail.', 'warning'); return; }
+  setBtnLoading('btn-recover', 'icon-recover', 'label-recover', true, 'Enviando...');
+  try {
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://delta-1.github.io/GESTORFISCALPRO/',
+    });
+    if (error) throw error;
+    toast('Link enviado! Verifique seu e-mail.', 'success');
+    setBtnLoading('btn-recover', 'icon-recover', 'label-recover', false);
+    setAuthMode('login');
+  } catch(e) {
+    toast(translateAuthError(e.message || String(e)), 'error');
+    setBtnLoading('btn-recover', 'icon-recover', 'label-recover', false);
+  }
+}
+
+async function doResetPassword() {
+  const pass    = document.getElementById('reset-password').value;
+  const confirm = document.getElementById('reset-password-confirm').value;
+  if (!pass || pass.length < 6) { toast('A senha deve ter no mínimo 6 caracteres.', 'warning'); return; }
+  if (pass !== confirm)          { toast('As senhas não coincidem.', 'warning'); return; }
+  setBtnLoading('btn-reset', 'icon-reset', 'label-reset', true, 'Salvando...');
+  try {
+    const { error } = await sb.auth.updateUser({ password: pass });
+    if (error) throw error;
+    toast('Senha redefinida com sucesso! Faça login.', 'success');
+    document.getElementById('reset-screen').classList.add('hidden');
+    document.getElementById('login-screen').classList.remove('hidden');
+    setAuthMode('login');
+    lucide.createIcons();
+  } catch(e) {
+    toast(translateAuthError(e.message || String(e)), 'error');
+  }
+  setBtnLoading('btn-reset', 'icon-reset', 'label-reset', false);
 }
 
 /* ─── TELA AGUARDANDO ─────────────────────────── */
