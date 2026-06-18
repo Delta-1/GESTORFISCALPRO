@@ -1434,6 +1434,9 @@ async function afterLogin(user) {
 }
 
 function routeByStatus() {
+  // Admins sempre vão direto pro app
+  if (isAdmin) { loadApp(false); return; }
+
   const status = empresaData.status || 'pending';
   hideAllScreens();
   if (status === 'active') {
