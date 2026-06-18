@@ -1208,6 +1208,7 @@ let produtos = [];
 let currentXmlName = '';
 let statusPollTimer = null;
 let isAdmin = false;
+let passwordRecoveryMode = false;
 let currentStep = 1;
 let signupRegime = '';
 let activeTab = 0;
@@ -1221,17 +1222,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     sb = window.supabase.createClient(GF_SB_URL, GF_SB_KEY);
 
-    // Detecta link de recuperação de senha no hash da URL
-    sb.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        hideAllScreens();
-        document.getElementById('reset-screen').classList.remove('hidden');
-        lucide.createIcons();
+    // ── Verifica PRIMEIRO se é um link de recuperação de senha ──
+    // Supabase envia o token no hash: #access_token=...&type=recovery
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    if (hashParams.get('type') === 'recovery') {
+      passwordRecoveryMode = true;
+      history.replaceState({}, '', window.location.pathname + window.location.search);
+      showResetScreen();
+      return; // Para o fluxo normal de login
+    }
+
+    // ── Também captura via onAuthStateChange (fallback) ──
+    sb.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY' && !passwordRecoveryMode) {
+        passwordRecoveryMode = true;
+        showResetScreen();
       }
     });
 
     const { data: { session } } = await sb.auth.getSession();
-    if (session) {
+    if (session && !passwordRecoveryMode) {
       await afterLogin(session.user);
     }
   } catch(e) {
@@ -1443,6 +1453,13 @@ function hideAllScreens() {
 }
 
 /* ─── RECUPERAÇÃO DE SENHA ────────────────────── */
+function showResetScreen() {
+  hideAllScreens();
+  document.getElementById('reset-screen').classList.remove('hidden');
+  lucide.createIcons();
+  setTimeout(() => document.getElementById('reset-password')?.focus(), 200);
+}
+
 async function doSendRecovery() {
   const email = document.getElementById('recover-email').value.trim();
   if (!email) { toast('Digite seu e-mail.', 'warning'); return; }
@@ -1466,19 +1483,28 @@ async function doResetPassword() {
   const confirm = document.getElementById('reset-password-confirm').value;
   if (!pass || pass.length < 6) { toast('A senha deve ter no mínimo 6 caracteres.', 'warning'); return; }
   if (pass !== confirm)          { toast('As senhas não coincidem.', 'warning'); return; }
+
   setBtnLoading('btn-reset', 'icon-reset', 'label-reset', true, 'Salvando...');
   try {
     const { error } = await sb.auth.updateUser({ password: pass });
     if (error) throw error;
-    toast('Senha redefinida com sucesso! Faça login.', 'success');
-    document.getElementById('reset-screen').classList.add('hidden');
+
+    // Limpa sessão e estado de recovery
+    passwordRecoveryMode = false;
+    await sb.auth.signOut();
+
+    // Mostra sucesso e vai para login limpo
+    hideAllScreens();
     document.getElementById('login-screen').classList.remove('hidden');
     setAuthMode('login');
+    document.getElementById('login-email').value = '';
+    document.getElementById('login-password').value = '';
     lucide.createIcons();
+    toast('✅ Senha redefinida! Faça login com sua nova senha.', 'success');
   } catch(e) {
     toast(translateAuthError(e.message || String(e)), 'error');
+    setBtnLoading('btn-reset', 'icon-reset', 'label-reset', false);
   }
-  setBtnLoading('btn-reset', 'icon-reset', 'label-reset', false);
 }
 
 /* ─── TELA AGUARDANDO ─────────────────────────── */
