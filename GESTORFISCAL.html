@@ -524,9 +524,10 @@ input[type=range] { accent-color:#10b981; }
     </div>
 
     <button id="btn-pay" onclick="goToStripe()" class="w-full py-3.5 rounded-2xl text-sm font-extrabold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 mb-3">
-      <i data-lucide="credit-card" class="w-4 h-4"></i> Assinar agora
+      <i data-lucide="credit-card" class="w-4 h-4"></i> Adquirir Licença
     </button>
-    <p class="text-[11px] text-center text-slate-400 mb-4">Pagamento seguro via Stripe · Cancele quando quiser</p>
+    <p class="text-[11px] text-center text-slate-400 mb-2">Pagamento seguro via Stripe 🔒</p>
+    <p class="text-[11px] text-center text-slate-400 mb-4">Precisa de ajuda? Fale pelo <button onclick="abrirWhatsApp(event)" class="text-emerald-500 font-bold hover:underline">WhatsApp</button></p>
     <button onclick="doLogout()" class="w-full py-2.5 rounded-xl text-sm font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">
       Sair da conta
     </button>
@@ -1151,49 +1152,49 @@ const LR = { pis:.0165, cofins:.076, icms:.17 };
 /* ════════════════════════════════════════════════
    STRIPE — LINKS POR REGIME (crie no dashboard.stripe.com)
 ════════════════════════════════════════════════ */
-const STRIPE_LINKS = {
-  MEI: 'https://buy.stripe.com/9B6aEWbwr3SxgOz4OT00000',
-  SN:  'https://buy.stripe.com/14A8wO6c788N9m74OT00001',
-  LP:  'https://buy.stripe.com/14A6oG1VR60FgOzept00002',
-  LR:  'https://buy.stripe.com/bJe5kC43Z4WBfKv81500003',
-};
+// Link único para todos os regimes — R$ 100,00/mês
+const STRIPE_LINK_UNIVERSAL = 'https://buy.stripe.com/dRm28q8kfdt7bufa9d00004';
+const STRIPE_LINKS = { MEI: STRIPE_LINK_UNIVERSAL, SN: STRIPE_LINK_UNIVERSAL, LP: STRIPE_LINK_UNIVERSAL, LR: STRIPE_LINK_UNIVERSAL };
+
+// WhatsApp de suporte (altere o número abaixo)
+const WHATSAPP_NUMERO = '55XXXXXXXXXXX'; // ex: 5511999999999
 
 const PLANOS = {
   MEI: {
-    nome: 'Plano MEI',
-    preco: 'R$ 29,90',
+    nome: 'Licença GestorFiscal PRO',
+    preco: 'R$ 100,00',
     periodo: '/mês',
     cor: 'emerald',
-    icone: 'sprout',
-    desc: 'Ideal para Microempreendedores Individuais',
-    features: ['Upload ilimitado de XMLs', 'Precificação automática', 'Tabela TIPI integrada', 'Histórico de análises', 'Suporte via email'],
+    icone: 'landmark',
+    desc: 'MEI — Microempreendedor Individual',
+    features: ['Upload ilimitado de XMLs de NF-e', 'Precificação automática por regime', 'Banco NCM com CST/ST/isenção', 'Tabela TIPI integrada (IPI)', 'Histórico de análises salvo', 'Relatório para impressão'],
   },
   SN: {
-    nome: 'Plano Essencial',
-    preco: 'R$ 49,90',
+    nome: 'Licença GestorFiscal PRO',
+    preco: 'R$ 100,00',
     periodo: '/mês',
-    cor: 'blue',
-    icone: 'building-2',
-    desc: 'Para empresas no Simples Nacional',
-    features: ['Tudo do Plano MEI', 'Cálculo por Anexo I–V', 'Análise de margem por produto', 'NCM fiscal automático', 'Suporte prioritário'],
+    cor: 'emerald',
+    icone: 'landmark',
+    desc: 'Simples Nacional — Anexo I ao V',
+    features: ['Upload ilimitado de XMLs de NF-e', 'Cálculo por Anexo I–V automático', 'Banco NCM com CST/ST/isenção', 'Tabela TIPI integrada (IPI)', 'Histórico de análises salvo', 'Relatório para impressão'],
   },
   LP: {
-    nome: 'Plano Profissional',
-    preco: 'R$ 79,90',
+    nome: 'Licença GestorFiscal PRO',
+    preco: 'R$ 100,00',
     periodo: '/mês',
-    cor: 'violet',
-    icone: 'briefcase',
-    desc: 'Para empresas no Lucro Presumido',
-    features: ['Tudo do Plano Essencial', 'Crédito ICMS na entrada', 'PIS/COFINS cumulativo', 'Relatório para impressão', 'Suporte VIP'],
+    cor: 'emerald',
+    icone: 'landmark',
+    desc: 'Lucro Presumido',
+    features: ['Upload ilimitado de XMLs de NF-e', 'Crédito ICMS na entrada', 'PIS/COFINS cumulativo', 'Banco NCM com CST/ST/isenção', 'Histórico de análises salvo', 'Relatório para impressão'],
   },
   LR: {
-    nome: 'Plano Enterprise',
-    preco: 'R$ 99,90',
+    nome: 'Licença GestorFiscal PRO',
+    preco: 'R$ 100,00',
     periodo: '/mês',
-    cor: 'rose',
+    cor: 'emerald',
     icone: 'landmark',
-    desc: 'Para empresas no Lucro Real',
-    features: ['Tudo do Plano Profissional', 'PIS/COFINS não-cumulativo', 'Crédito PIS/COFINS entrada', 'API de integração (em breve)', 'Gerente de conta dedicado'],
+    desc: 'Lucro Real',
+    features: ['Upload ilimitado de XMLs de NF-e', 'PIS/COFINS não-cumulativo', 'Crédito PIS/COFINS na entrada', 'Banco NCM com CST/ST/isenção', 'Histórico de análises salvo', 'Relatório para impressão'],
   },
 };
 
@@ -1437,14 +1438,13 @@ function routeByStatus() {
   // Admins sempre vão direto pro app
   if (isAdmin) { loadApp(false); return; }
 
-  const status = empresaData.status || 'pending';
+  const status = empresaData.status || 'pending_payment';
   hideAllScreens();
   if (status === 'active') {
     loadApp(false);
-  } else if (status === 'pending_payment') {
-    showPaymentScreen();
   } else {
-    showPendingScreen();
+    // pending ou pending_payment → vai direto para pagamento
+    showPaymentScreen();
   }
 }
 
@@ -1684,50 +1684,29 @@ function renderAdminUsers(filter) {
   }
 
   list.innerHTML = users.map(u => `
-    <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
-      <div class="flex items-start justify-between gap-3">
-        <div class="min-w-0">
-          <div class="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">${u.nome || '—'}</div>
-          <div class="text-[11px] text-slate-400 mt-0.5">${u.cnpj || 'CNPJ não informado'} · ${REGIME_LABEL[u.regime] || u.regime || '—'}</div>
-          <div class="mt-1.5 flex items-center gap-2 flex-wrap">
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${STATUS_STYLE[u.status] || ''}">${STATUS_LABEL[u.status] || u.status}</span>
-            <span class="text-[10px] text-slate-400">${new Date(u.created_at).toLocaleDateString('pt-BR')}</span>
-            ${u.paid_at ? `<span class="text-[10px] text-emerald-500 font-semibold">Pago em ${new Date(u.paid_at).toLocaleDateString('pt-BR')}</span>` : ''}
-          </div>
-        </div>
-        <div class="flex flex-col gap-1.5 shrink-0 items-end">
-
-          ${u.status === 'pending' ? `
-            <button onclick="adminActivate('${u.user_id}','pending_payment')"
-              class="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-all whitespace-nowrap flex items-center gap-1">
-              ✅ Liberar para pagamento
-            </button>` : ''}
-
-          ${u.status === 'pending_payment' ? `
-            <button onclick="adminActivate('${u.user_id}','active')"
-              class="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-blue-600 hover:bg-blue-700 text-white transition-all whitespace-nowrap flex items-center gap-1">
-              ⚡ Ativar manualmente
-            </button>
-            <span class="text-[10px] text-slate-400 text-right">ou aguarde o pagamento<br>ser confirmado pelo Stripe</span>` : ''}
-
-          ${u.status === 'active' ? `
-            <span class="text-[10px] text-emerald-500 font-bold">✓ Conta ativa</span>
-            <button onclick="adminActivate('${u.user_id}','pending')"
-              class="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-red-100 dark:hover:bg-red-950/50 hover:text-red-500 transition-all whitespace-nowrap">
-              Suspender
-            </button>` : ''}
-
+    <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex items-center justify-between gap-3">
+      <div class="min-w-0">
+        <div class="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">${u.nome || '—'}</div>
+        <div class="text-[11px] text-slate-400 mt-0.5">${u.cnpj || 'CNPJ não informado'} · ${REGIME_LABEL[u.regime] || u.regime || '—'}</div>
+        <div class="mt-1.5 flex items-center gap-2 flex-wrap">
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${STATUS_STYLE[u.status] || ''}">${STATUS_LABEL[u.status] || u.status}</span>
+          <span class="text-[10px] text-slate-400">${new Date(u.created_at).toLocaleDateString('pt-BR')}</span>
+          ${u.paid_at ? `<span class="text-[10px] text-emerald-500 font-semibold">Pago ${new Date(u.paid_at).toLocaleDateString('pt-BR')}</span>` : ''}
         </div>
       </div>
-
-      ${u.status === 'pending' ? `
-        <div class="mt-3 p-2.5 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-900/40">
-          <p class="text-[10px] text-amber-600 dark:text-amber-400">
-            <strong>Próximo passo:</strong> Clique em "Liberar para pagamento" para liberar o link de assinatura para este usuário.
-            Após o pagamento, o Stripe ativa automaticamente. Se precisar ativar sem pagamento, use "⚡ Ativar manualmente".
-          </p>
-        </div>` : ''}
-
+      <div class="flex flex-col gap-1.5 shrink-0 items-end">
+        ${u.status !== 'active' ? `
+          <button onclick="adminActivate('${u.user_id}','active')"
+            class="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-all whitespace-nowrap">
+            ⚡ Ativar acesso
+          </button>` : `
+          <span class="text-[10px] text-emerald-500 font-bold mb-1">✓ Ativo</span>`}
+        ${u.status === 'active' ? `
+          <button onclick="adminActivate('${u.user_id}','pending_payment')"
+            class="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-red-100 dark:hover:bg-red-950/50 hover:text-red-500 transition-all whitespace-nowrap">
+            🔒 Suspender
+          </button>` : ''}
+      </div>
     </div>`).join('');
   lucide.createIcons();
 }
@@ -2918,6 +2897,30 @@ function toast(msg, type = 'info') {
   document.getElementById('toast-container').appendChild(el);
   lucide.createIcons();
   setTimeout(() => { el.style.animation = 'slideOut 0.3s ease forwards'; setTimeout(() => el.remove(), 300); }, 4000);
+}
+</script>
+
+<!-- ══ BOTÃO WHATSAPP FLUTUANTE ══ -->
+<a id="whatsapp-fab"
+   href="#"
+   onclick="abrirWhatsApp(event)"
+   title="Suporte via WhatsApp"
+   class="no-print fixed bottom-6 right-6 z-[999] w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 active:scale-95"
+   style="background:#25D366;">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="28" height="28">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+  </svg>
+</a>
+
+<script>
+function abrirWhatsApp(e) {
+  e.preventDefault();
+  const num = typeof WHATSAPP_NUMERO !== 'undefined' ? WHATSAPP_NUMERO : '55XXXXXXXXXXX';
+  if (num.includes('XXXXXXXXX')) {
+    return; // número não configurado ainda
+  }
+  const msg = encodeURIComponent('Olá! Preciso de suporte no GestorFiscal PRO.');
+  window.open('https://wa.me/' + num + '?text=' + msg, '_blank');
 }
 </script>
 </body>
