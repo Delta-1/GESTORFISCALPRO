@@ -1128,6 +1128,14 @@ const CST_PIS_LABEL = {
   '04':'04 — Monofásico','06':'06 — Alíq. zero','07':'07 — Isento',
   '08':'08 — Sem incidência','09':'09 — Suspensão',
 };
+// Motivo da desoneração do ICMS (tabela oficial da NF-e — tag motDesICMS)
+const MOT_DESONERACAO_LABEL = {
+  '1':'Táxi', '3':'Produtor Agropecuário', '4':'Frotista/Locadora',
+  '5':'Diplomático/Consular', '6':'Utilitários/Motocicletas — Amazônia Ocidental e ALC',
+  '7':'SUFRAMA', '8':'Venda a Órgão Público', '9':'Outros',
+  '10':'Deficiente Condutor', '11':'Deficiente Não Condutor', '12':'Produtor Agropecuário',
+  '16':'Olimpíadas Rio 2016', '90':'Outros',
+};
 
 /* ════════════════════════════════════════════════
    AUTOMAÇÃO FISCAL — ICMS DE ENTRADA (ESTADO DO ACRE)
@@ -1925,6 +1933,9 @@ function processXmlFile(file) {
         xml.querySelector('emit UF')?.textContent || ''
       ).trim().toUpperCase();
 
+      // Inscrição Suframa do destinatário — presente quando a operação tem benefício ZFM/ALC
+      const isufDestinatario = xml.querySelector('dest ISUF')?.textContent || null;
+
       // Valor total dos produtos para distribuição proporcional do frete
       const vTotalProd = dets.reduce((s, d) => {
         return s + parseFloat(d.querySelector('vProd')?.textContent || 0);
@@ -1942,6 +1953,8 @@ function processXmlFile(file) {
         const vOutro = parseFloat(det.querySelector('vOutro')?.textContent || 0) || 0;
         // ICMS desonerado (benefício Suframa / ZFM-ALC) — qualquer grupo ICMSxx do item
         const vICMSDeson = parseFloat(det.querySelector('imposto ICMS vICMSDeson')?.textContent || 0) || 0;
+        // Motivo da desoneração (tabela oficial NF-e): 6=ALC/Amazônia Ocidental, 7=SUFRAMA, 9/90=Outros, etc.
+        const motDesICMS = det.querySelector('imposto ICMS motDesICMS')?.textContent || null;
         // Origem da mercadoria (0-8) — indica se é importada, usado para definir a alíquota interestadual (4%)
         const origCodigo = det.querySelector('imposto ICMS orig')?.textContent ?? '0';
         // CST/CSOSN real do ICMS — direto do grupo ICMSxx da nota (não estimado)
@@ -1980,6 +1993,8 @@ function processXmlFile(file) {
           desconto: vDesc / qCom || 0,        // R$/unidade — vem do XML (vDesc)
           outrasDespesas: vOutro / qCom || 0, // R$/unidade — vem do XML (vOutro)
           icmsDesonerado: vICMSDeson / qCom || 0, // R$/unidade — benefício Suframa
+          motDesICMS,                          // código do motivo da desoneração (NF-e)
+          isufDestinatario,                    // inscrição Suframa do destinatário (nota toda)
           ufOrigem,                           // UF do fornecedor (origem da mercadoria)
           origCodigo,                          // código <orig> (0-8) — indica importação
           cstXml, csosnXml,                    // CST/CSOSN real do ICMS, lido direto da nota
@@ -2833,17 +2848,35 @@ function renderSidebarDetail(alq, defaultMargem, defaultFrete, icmsE) {
             ${sInp('outrasDespesas', outrasDespesas||'', 9999, '0.01')}
           </div>
         </div>
-        ${icmsDesonerado > 0 ? `
-          <div class="flex items-center justify-between py-1.5 px-2 mb-1 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200 dark:border-emerald-900/40">
-            <span class="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1"><i data-lucide="shield-check" class="w-3 h-3"></i> ICMS Desonerado (Suframa/ZFM-ALC)</span>
-            <span class="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400">${fmtBRL(icmsDesonerado)}</span>
-          </div>` : ''}
         ${row('Preço de Compra', precoCompra, '')}
         ${desconto > 0 ? row('Desconto', desconto, 'text-red-400', '-') : ''}
         ${freteVal > 0 ? row('Frete (rateado)', freteVal, '') : ''}
         ${outrasDespesas > 0 ? row('Outras Despesas', outrasDespesas, '') : ''}
       </div>
     </div>
+
+    ${(icmsDesonerado > 0 || p.motDesICMS || p.isufDestinatario) ? `
+    <!-- SUFRAMA / ICMS DESONERADO — PAINEL DE TRANSPARÊNCIA -->
+    <div class="bg-white dark:bg-[#0f172a] border border-emerald-200 dark:border-emerald-900/40 rounded-xl overflow-hidden">
+      <div class="bg-emerald-50 dark:bg-emerald-950/20 px-4 py-2 flex items-center gap-2 border-b border-emerald-200 dark:border-emerald-900/40">
+        <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-500"></i>
+        <span class="text-[11px] font-extrabold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">Suframa / ICMS Desonerado</span>
+      </div>
+      <div class="p-3 space-y-1.5">
+        <div class="grid grid-cols-2 gap-2 text-[11px]">
+          <div class="bg-slate-50 dark:bg-slate-900 rounded-lg p-2">
+            <div class="text-[9px] text-slate-400 uppercase font-bold mb-0.5">Inscrição Suframa (destinatário)</div>
+            <div class="font-bold text-slate-700 dark:text-slate-200">${p.isufDestinatario || '— não informada na nota'}</div>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-900 rounded-lg p-2">
+            <div class="text-[9px] text-slate-400 uppercase font-bold mb-0.5">Motivo da Desoneração</div>
+            <div class="font-bold text-slate-700 dark:text-slate-200">${p.motDesICMS ? `${p.motDesICMS} — ${MOT_DESONERACAO_LABEL[p.motDesICMS] || 'Código não catalogado'}` : '— não informado na nota'}</div>
+          </div>
+        </div>
+        ${row('Valor ICMS Desonerado (vICMSDeson, do XML)', icmsDesonerado, 'text-emerald-500')}
+        <div class="text-[9px] text-slate-400 italic pt-1">Esses dados vêm direto da nota fiscal (grupo ICMS do item e dados do destinatário) — não há estimativa aqui. O valor desonerado é informativo e não reduz o CMV automaticamente.</div>
+      </div>
+    </div>` : ''}
 
     <!-- ② ICMS DE ENTRADA — AUTOMAÇÃO FISCAL (NCM + UF ORIGEM) -->
     <div class="bg-white dark:bg-[#0f172a] border border-orange-200 dark:border-orange-900/40 rounded-xl overflow-hidden">
