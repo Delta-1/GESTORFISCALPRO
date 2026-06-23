@@ -1136,11 +1136,14 @@ const CST_PIS_LABEL = {
 const ICMS_AC_ALIQUOTA_INTERNA = 19; // alíquota interna padrão do ICMS no Acre
 const ICMS_AC_INTERESTADUAL    = 12; // alíquota interestadual padrão (origem Sul/Sudeste/Centro-Oeste)
 
-// NCM (4 dígitos) sujeitos a Substituição Tributária no Acre, com alíquota efetiva de ST estimada
+// NCM (4 dígitos) sujeitos a Substituição Tributária no Acre, com alíquota efetiva de ST
+// Fonte oficial confirmada (Instrução Normativa DIAT nº 1/2023, Anexo I): 2402, 2403, 2523.
+// Demais valores são estimativas — ver observação no código.
 const ICMS_AC_ST_NCM = {
-  '2202':25, '2203':25, '2204':25, '2208':25,   // bebidas
-  '2401':45, '2402':45, '2403':45,              // tabaco/cigarros
-  '3303':36, '3304':36, '3305':36,              // perfumaria/cosméticos
+  '2202':25, '2203':25, '2204':25, '2208':25,   // bebidas (estimado)
+  '2401':44.57, '2402':44.57, '2403':44.57,     // tabaco/cigarros — oficial IN DIAT 1/2023 (origem alíq. 12%)
+  '2523':12.77,                                  // cimento — oficial IN DIAT 1/2023 (origem alíq. 12%)
+  '3303':36, '3304':36, '3305':36,              // perfumaria/cosméticos (estimado)
   '3208':30, '3209':30,                         // tintas e vernizes
   '4011':25,                                    // pneus
   '8517':30, '8528':30, '8471':30,              // eletrônicos/informática
