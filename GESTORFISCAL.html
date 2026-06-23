@@ -1944,6 +1944,9 @@ function processXmlFile(file) {
         const vICMSDeson = parseFloat(det.querySelector('imposto ICMS vICMSDeson')?.textContent || 0) || 0;
         // Origem da mercadoria (0-8) — indica se é importada, usado para definir a alíquota interestadual (4%)
         const origCodigo = det.querySelector('imposto ICMS orig')?.textContent ?? '0';
+        // CST/CSOSN real do ICMS — direto do grupo ICMSxx da nota (não estimado)
+        const cstXml   = det.querySelector('imposto ICMS CST')?.textContent || null;
+        const csosnXml = det.querySelector('imposto ICMS CSOSN')?.textContent || null;
 
         // IPI: lê do XML (<pIPI>); fallback TIPI (não exibido na tela de Custo de Entrada — SN/LP)
         const pIpiXml = parseFloat(det.querySelector('pIPI')?.textContent || '');
@@ -1973,6 +1976,7 @@ function processXmlFile(file) {
           icmsDesonerado: vICMSDeson / qCom || 0, // R$/unidade — benefício Suframa
           ufOrigem,                           // UF do fornecedor (origem da mercadoria)
           origCodigo,                          // código <orig> (0-8) — indica importação
+          cstXml, csosnXml,                    // CST/CSOSN real do ICMS, lido direto da nota
           icmsEntradaTipo: icmsEntradaAuto.tipo,                       // 'ST' | 'antecipacao' | 'nenhum'
           icmsEntradaAliquota: icmsEntradaAuto.aliquota,               // % automático
           icmsEntradaAliquotaInterestadual: icmsEntradaAuto.aliquotaInterestadual, // 12 | 7 | 4
@@ -2047,7 +2051,9 @@ function renderProducts() {
     // Badge NCM fiscal
     const stBadge  = fiscal?.st   ? '<span class="ml-1 px-1 py-0.5 text-[8px] font-bold bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 rounded">ST</span>' : '';
     const isenBadge= fiscal?.isen ? '<span class="ml-1 px-1 py-0.5 text-[8px] font-bold bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded">ISEN</span>' : '';
-    const cstBadge = fiscal       ? `<span class="px-1 py-0.5 text-[8px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 rounded">CST ${fiscal.cst}</span>` : '';
+    const cstReal  = p.cstXml || p.csosnXml;
+    const cstLabel = cstReal ? `${p.csosnXml ? 'CSOSN' : 'CST'} ${cstReal}` : (fiscal ? `CST ${fiscal.cst} (est.)` : '');
+    const cstBadge = cstLabel ? `<span class="px-1 py-0.5 text-[8px] font-bold ${cstReal ? 'bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'} rounded">${cstLabel}</span>` : '';
     const xmlFreteLabel = p.freteXml > 0 && p.freteRS === p.freteXml
       ? `<div class="text-[8px] text-blue-400 mt-0.5">do XML</div>` : '';
 
@@ -2770,7 +2776,9 @@ function renderSidebarDetail(alq, defaultMargem, defaultFrete, icmsE) {
           <span class="font-mono">NCM ${p.ncm}</span>
           <span>Qtd: <strong>${p.qCom}</strong></span>
           <span class="px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 font-bold">${regimeLabel[regime]||regime}</span>
-          ${fiscal ? `<span class="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold">CST ${fiscal.cst}</span>` : ''}
+          ${(p.cstXml || p.csosnXml)
+            ? `<span class="px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-bold">${p.csosnXml ? 'CSOSN' : 'CST'} ${p.cstXml || p.csosnXml} <span class="opacity-70 font-normal">do XML</span></span>`
+            : fiscal ? `<span class="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold">CST ${fiscal.cst} (estimado)</span>` : ''}
           ${fiscal?.st   ? `<span class="px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-bold">ST</span>` : ''}
           ${fiscal?.isen ? `<span class="px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold">Isento</span>` : ''}
           ${fiscal?.pisCofins ? `<span class="px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-bold">PIS/COF ${fiscal.pisCofins}</span>` : ''}
