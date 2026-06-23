@@ -1134,46 +1134,70 @@ const CST_PIS_LABEL = {
    NCM + UF de origem → ICMS-ST ou Antecipação Parcial
 ════════════════════════════════════════════════ */
 const ICMS_AC_ALIQUOTA_INTERNA = 19; // alíquota interna padrão do ICMS no Acre
-const ICMS_AC_INTERESTADUAL    = 12; // alíquota interestadual padrão (origem Sul/Sudeste/Centro-Oeste)
+
+// UFs de origem cuja alíquota interestadual para destino no Acre (Região Norte) é 7%
+// (Sul e Sudeste, exceto Espírito Santo — Resolução do Senado nº 22/89)
+const UF_ALIQ_INTERESTADUAL_7 = ['SP', 'RJ', 'MG', 'PR', 'SC', 'RS'];
+
+/**
+ * Determina a alíquota interestadual aplicável (Resolução Senado 22/89 e 13/2012)
+ * com base na UF de origem do fornecedor e no código <orig> do item na NF-e.
+ * - 4%:  mercadoria importada ou com conteúdo de importação > 40% (orig 1,2,3,6,7,8), qualquer UF
+ * - 7%:  origem Sul/Sudeste exceto ES
+ * - 12%: origem Norte, Nordeste, Centro-Oeste, DF e ES
+ */
+function getAliquotaInterestadualAC(ufOrigem, origCodigo) {
+  const orig = Number(origCodigo);
+  if ([1, 2, 3, 6, 7, 8].includes(orig)) return 4;
+  if (UF_ALIQ_INTERESTADUAL_7.includes((ufOrigem || '').toUpperCase())) return 7;
+  return 12;
+}
 
 // NCM (4 dígitos) sujeitos a Substituição Tributária no Acre, com alíquota efetiva de ST
-// Fonte oficial confirmada (Instrução Normativa DIAT nº 1/2023, Anexo I): 2402, 2403, 2523.
-// Demais valores são estimativas — ver observação no código.
+// por faixa de alíquota interestadual de origem (12% / 7% / 4%).
+// Fonte oficial confirmada (Instrução Normativa DIAT nº 1/2023, Anexo I): 2401-2403, 2523.
+// Demais NCMs usam um valor único estimado (mesma alíquota independente da origem) — ver observação.
 const ICMS_AC_ST_NCM = {
+  '2401':{12:44.57,7:52.79,4:57.71}, '2402':{12:44.57,7:52.79,4:57.71}, '2403':{12:44.57,7:52.79,4:57.71}, // cigarros/tabaco — oficial
+  '2523':{12:12.77,7:19.18,4:23.02}, // cimento — oficial
   '2202':25, '2203':25, '2204':25, '2208':25,   // bebidas (estimado)
-  '2401':44.57, '2402':44.57, '2403':44.57,     // tabaco/cigarros — oficial IN DIAT 1/2023 (origem alíq. 12%)
-  '2523':12.77,                                  // cimento — oficial IN DIAT 1/2023 (origem alíq. 12%)
   '3303':36, '3304':36, '3305':36,              // perfumaria/cosméticos (estimado)
-  '3208':30, '3209':30,                         // tintas e vernizes
-  '4011':25,                                    // pneus
-  '8517':30, '8528':30, '8471':30,              // eletrônicos/informática
-  '8703':25,                                     // veículos
-  '2710':30,                                     // combustíveis/lubrificantes
+  '3208':30, '3209':30,                         // tintas e vernizes (estimado)
+  '4011':25,                                    // pneus (estimado)
+  '8517':30, '8528':30, '8471':30,              // eletrônicos/informática (estimado)
+  '8703':25,                                     // veículos (estimado)
+  '2710':30,                                     // combustíveis/lubrificantes (estimado)
 };
 
 /**
  * Determina o tipo e a alíquota de ICMS de entrada (ST ou Antecipação Parcial)
- * de acordo com a normativa do Estado do Acre, a partir do NCM e da UF de origem.
+ * de acordo com a normativa do Estado do Acre, a partir do NCM, da UF de origem
+ * e do código <orig> do item (indica se é importado).
  * Operações internas (origem AC) não geram ST/antecipação.
  */
-function getIcmsEntradaAcre(ncm, ufOrigem) {
+function getIcmsEntradaAcre(ncm, ufOrigem, origCodigo) {
   const n  = String(ncm || '').replace(/\D/g, '');
   const uf = (ufOrigem || '').toUpperCase();
 
-  if (!n) return { tipo: 'nenhum', aliquota: 0 };
-  if (uf === 'AC' || !uf) return { tipo: 'nenhum', aliquota: 0 }; // operação interna ou UF não informada
+  if (!n) return { tipo: 'nenhum', aliquota: 0, aliquotaInterestadual: null };
+  if (uf === 'AC' || !uf) return { tipo: 'nenhum', aliquota: 0, aliquotaInterestadual: null }; // operação interna ou UF não informada
+
+  const aliqInter = getAliquotaInterestadualAC(uf, origCodigo);
 
   // 1. Verifica se o NCM está sujeito a Substituição Tributária no Acre
-  const stAliq = ICMS_AC_ST_NCM[n.slice(0, 4)];
-  if (stAliq != null) return { tipo: 'ST', aliquota: stAliq };
+  const stEntry = ICMS_AC_ST_NCM[n.slice(0, 4)];
+  if (stEntry != null) {
+    const aliquota = typeof stEntry === 'object' ? (stEntry[aliqInter] ?? stEntry[12]) : stEntry;
+    return { tipo: 'ST', aliquota, aliquotaInterestadual: aliqInter };
+  }
 
   // 2. Se isento conforme banco fiscal, não há antecipação
   const fiscal = getNcmFiscal(n);
-  if (fiscal?.isen) return { tipo: 'nenhum', aliquota: 0 };
+  if (fiscal?.isen) return { tipo: 'nenhum', aliquota: 0, aliquotaInterestadual: aliqInter };
 
-  // 3. Caso contrário, antecipação parcial = diferencial entre alíquota interna AC e interestadual
-  const diferencial = Math.max(0, ICMS_AC_ALIQUOTA_INTERNA - ICMS_AC_INTERESTADUAL);
-  return { tipo: 'antecipacao', aliquota: diferencial };
+  // 3. Caso contrário, antecipação parcial = diferencial entre alíquota interna AC e interestadual de origem
+  const diferencial = Math.max(0, ICMS_AC_ALIQUOTA_INTERNA - aliqInter);
+  return { tipo: 'antecipacao', aliquota: diferencial, aliquotaInterestadual: aliqInter };
 }
 
 const DEMO_PRODUTOS = [
@@ -1918,6 +1942,8 @@ function processXmlFile(file) {
         const vOutro = parseFloat(det.querySelector('vOutro')?.textContent || 0) || 0;
         // ICMS desonerado (benefício Suframa / ZFM-ALC) — qualquer grupo ICMSxx do item
         const vICMSDeson = parseFloat(det.querySelector('imposto ICMS vICMSDeson')?.textContent || 0) || 0;
+        // Origem da mercadoria (0-8) — indica se é importada, usado para definir a alíquota interestadual (4%)
+        const origCodigo = det.querySelector('imposto ICMS orig')?.textContent ?? '0';
 
         // IPI: lê do XML (<pIPI>); fallback TIPI (não exibido na tela de Custo de Entrada — SN/LP)
         const pIpiXml = parseFloat(det.querySelector('pIPI')?.textContent || '');
@@ -1933,7 +1959,7 @@ function processXmlFile(file) {
         const fiscal = getNcmFiscal(ncm);
 
         // Automação fiscal: ICMS de entrada (ST / Antecipação Parcial) — Estado do Acre
-        const icmsEntradaAuto = getIcmsEntradaAcre(ncm, ufOrigem);
+        const icmsEntradaAuto = getIcmsEntradaAcre(ncm, ufOrigem, origCodigo);
 
         return {
           descricao: det.querySelector('xProd')?.textContent || '—',
@@ -1946,8 +1972,10 @@ function processXmlFile(file) {
           outrasDespesas: vOutro / qCom || 0, // R$/unidade — vem do XML (vOutro)
           icmsDesonerado: vICMSDeson / qCom || 0, // R$/unidade — benefício Suframa
           ufOrigem,                           // UF do fornecedor (origem da mercadoria)
-          icmsEntradaTipo: icmsEntradaAuto.tipo,       // 'ST' | 'antecipacao' | 'nenhum'
-          icmsEntradaAliquota: icmsEntradaAuto.aliquota, // % automático
+          origCodigo,                          // código <orig> (0-8) — indica importação
+          icmsEntradaTipo: icmsEntradaAuto.tipo,                       // 'ST' | 'antecipacao' | 'nenhum'
+          icmsEntradaAliquota: icmsEntradaAuto.aliquota,               // % automático
+          icmsEntradaAliquotaInterestadual: icmsEntradaAuto.aliquotaInterestadual, // 12 | 7 | 4
         };
       });
       toast(`${produtos.length} produto(s) carregado(s)!`, 'success');
@@ -2814,6 +2842,7 @@ function renderSidebarDetail(alq, defaultMargem, defaultFrete, icmsE) {
             ${ICMS_TIPO_LABEL[icmsEntradaTipo] || icmsEntradaTipo}
           </span>
           <span class="text-[10px] text-slate-400">NCM ${p.ncm} · origem ${p.ufOrigem || '—'}</span>
+          ${p.icmsEntradaAliquotaInterestadual != null ? `<span class="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-[9px] font-bold">Alíq. interestadual: ${p.icmsEntradaAliquotaInterestadual}%${Number(p.origCodigo) ? ' (importado)' : ''}</span>` : ''}
         </div>
         <div class="grid grid-cols-2 gap-2 mb-2">
           <div>
