@@ -987,13 +987,15 @@ input[type=range] { accent-color:#10b981; }
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Provedor</label>
             <select id="cfg-ai-provider" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+              <option value="gemini" selected>Google (Gemini)</option>
               <option value="anthropic">Anthropic (Claude)</option>
               <option value="openai">OpenAI (GPT)</option>
             </select>
           </div>
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Chave de API</label>
-            <input type="password" id="cfg-ai-key" placeholder="sk-ant-... ou sk-..." class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-violet-500">
+            <input type="password" id="cfg-ai-key" placeholder="AIzaSy... (Gemini) · sk-ant-... (Claude) · sk-... (OpenAI)" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-violet-500">
+            <p class="text-[10px] text-slate-400 mt-1">Gemini: gere sua chave grátis em <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-violet-500 underline">aistudio.google.com/app/apikey</a></p>
           </div>
           <div class="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-xl p-3 text-[11px] text-amber-700 dark:text-amber-400">
             <strong>Importante:</strong> sua chave fica salva apenas neste navegador (não é enviada aos nossos servidores), mas é visível no código do app — use uma chave com limite de gastos configurado no provedor.
@@ -2544,8 +2546,27 @@ async function testAiConfig() {
   }
 }
 
-// Chamada direta à API do provedor (Anthropic ou OpenAI), retorna o texto da resposta.
+// Chamada direta à API do provedor (Gemini, Anthropic ou OpenAI), retorna o texto da resposta.
 async function callAiRaw(provider, apiKey, messages) {
+  if (provider === 'gemini') {
+    const systemMsg = messages.find(m => m.role === 'system');
+    const userMsgs  = messages.filter(m => m.role !== 'system');
+    const contents = userMsgs.map(m => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }],
+    }));
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents,
+        systemInstruction: systemMsg ? { parts: [{ text: systemMsg.content }] } : undefined,
+      }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error?.message || 'Falha na chamada à API Gemini');
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  }
   if (provider === 'openai') {
     const resp = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
