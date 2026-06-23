@@ -680,9 +680,9 @@ input[type=range] { accent-color:#10b981; }
         </div>
         <div>
           <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-            <i data-lucide="receipt" class="w-3 h-3"></i> ICMS Entrada (%)
+            <i data-lucide="receipt" class="w-3 h-3"></i> ICMS Entrada padrão (%)
           </label>
-          <input type="number" id="cfg-icms-entrada" value="12" min="0" max="25" step="0.5" class="w-full px-3 py-2.5 bg-white dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          <input type="number" id="cfg-icms-entrada" value="12" min="0" max="25" step="0.5" title="Usado apenas como fallback quando a nota não traz pICMS/vICMS legível" class="w-full px-3 py-2.5 bg-white dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
         </div>
       </div>
 
@@ -1987,6 +1987,13 @@ function processXmlFile(file) {
         const vUnCom = parseFloat(det.querySelector('vUnCom')?.textContent || 0);
         const vProd  = parseFloat(det.querySelector('vProd')?.textContent || 0);
 
+        // ICMS de entrada real, cobrado pelo fornecedor — direto do XML (grupo ICMSxx do item).
+        // Prioriza <pICMS> (alíquota); se ausente, calcula vICMS/vBC como fallback.
+        const pIcmsXml = parseFloat(det.querySelector('imposto ICMS pICMS')?.textContent || '');
+        const vIcmsXml = parseFloat(det.querySelector('imposto ICMS vICMS')?.textContent || 0) || 0;
+        const vBcXml   = parseFloat(det.querySelector('imposto ICMS vBC')?.textContent || 0) || 0;
+        const icmsEntradaPct = !isNaN(pIcmsXml) ? pIcmsXml : (vBcXml > 0 ? (vIcmsXml / vBcXml) * 100 : null);
+
         // Desconto comercial do item (vDesc) — direto do XML
         const vDesc  = parseFloat(det.querySelector('vDesc')?.textContent || 0) || 0;
         // Outras despesas acessórias do item (vOutro) — direto do XML
@@ -2033,6 +2040,7 @@ function processXmlFile(file) {
           ncm, qCom, vUnCom,
           ipi: ipiRate,
           ipiCstXml,           // CST do IPI na nota — define se é tributado, isento, suspenso etc.
+          icmsEntradaPct,      // % de ICMS real cobrado pelo fornecedor — direto do XML (pICMS ou vICMS/vBC)
           freteRS,             // frete em R$/unidade vindo do XML
           freteXml: freteRS,   // cópia imutável para referência
           ncmFiscal: fiscal,   // dados CST/ST/isenção
@@ -2111,10 +2119,11 @@ function renderProducts() {
     const m      = p.margemCustom ?? margem;
     const freteR = p.freteRS      ?? freteGlobal; // R$ por unidade
     const ipi    = p.ipi ?? getIpiFromNcm(p.ncm);
+    const icms   = p.icmsEntradaPct ?? icmsE; // % de ICMS — real da nota quando disponível
     const fiscal = p.ncmFiscal || getNcmFiscal(p.ncm);
 
-    const preco   = calcPreco(p.vUnCom, freteR, icmsE, alq, m, ipi);
-    const custoEf = p.vUnCom + freteR + p.vUnCom * (icmsE/100 + ipi/100);
+    const preco   = calcPreco(p.vUnCom, freteR, icms, alq, m, ipi);
+    const custoEf = p.vUnCom + freteR + p.vUnCom * (icms/100 + ipi/100);
     totCusto += custoEf * p.qCom;
     totVenda += preco * p.qCom;
 
@@ -2271,8 +2280,9 @@ function printReport() {
     const m      = p.margemCustom ?? margem;
     const freteR = p.freteRS      ?? freteGlobal;
     const ipi    = p.ipi ?? getIpiFromNcm(p.ncm);
-    const preco   = p.ajuste || calcPreco(p.vUnCom, freteR, icmsE, alq, m, ipi);
-    const custoEf = p.vUnCom + freteR + p.vUnCom * (icmsE/100 + ipi/100);
+    const icms   = p.icmsEntradaPct ?? icmsE;
+    const preco   = p.ajuste || calcPreco(p.vUnCom, freteR, icms, alq, m, ipi);
+    const custoEf = p.vUnCom + freteR + p.vUnCom * (icms/100 + ipi/100);
     total += preco * p.qCom;
     const bg = i % 2 === 0 ? '#fff' : '#f8fafc';
     tbody.innerHTML += `
@@ -2741,7 +2751,8 @@ function renderSidebar() {
     const m      = p.margemCustom ?? margem;
     const freteR = p.freteRS      ?? freteGlobal;
     const ipiP   = p.ipi ?? getIpiFromNcm(p.ncm);
-    const preco  = p.ajuste || calcPreco(p.vUnCom, freteR, icmsE, alq, m, ipiP);
+    const icmsP  = p.icmsEntradaPct ?? icmsE;
+    const preco  = p.ajuste || calcPreco(p.vUnCom, freteR, icmsP, alq, m, ipiP);
     const div = document.createElement('div');
     div.className = 'prod-sidebar-item' + (i === selectedProductIdx ? ' selected' : '');
     div.onclick = () => { selectedProductIdx = i; renderSidebar(); };
@@ -2901,6 +2912,12 @@ function renderSidebarDetail(alq, defaultMargem, defaultFrete, icmsE) {
         ${desconto > 0 ? row('Desconto', desconto, 'text-red-400', '-') : ''}
         ${freteVal > 0 ? row('Frete (rateado)', freteVal, '') : ''}
         ${outrasDespesas > 0 ? row('Outras Despesas', outrasDespesas, '') : ''}
+        ${p.icmsEntradaPct != null ? `
+          <div class="flex items-center justify-between py-1.5 px-2 mt-1 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-900/40">
+            <span class="text-[10px] text-blue-700 dark:text-blue-400 font-bold">ICMS cobrado pelo fornecedor (da nota)</span>
+            <span class="text-[11px] font-extrabold text-blue-600 dark:text-blue-400">${p.icmsEntradaPct.toFixed(2)}%</span>
+          </div>` : `
+          <div class="text-[9px] text-amber-500 italic pt-1">Nota sem pICMS/vICMS legível — usando ${icmsE}% padrão configurado.</div>`}
       </div>
     </div>
 
