@@ -1161,11 +1161,23 @@ function getAliquotaInterestadualAC(ufOrigem, origCodigo) {
   return 12;
 }
 
+// Normaliza NCM/CEST removendo pontos e qualquer caractere não numérico,
+// para garantir que "0400100", "04.001.00" e "04.001-00" sejam tratados como o mesmo código.
+function normalizeDigits(v) { return String(v || '').replace(/\D/g, ''); }
+
+// Formata CEST normalizado (7 dígitos) no padrão oficial XX.XXX.XX para exibição.
+function formatCest(v) {
+  const d = normalizeDigits(v);
+  if (d.length !== 7) return v || '';
+  return `${d.slice(0,2)}.${d.slice(2,5)}.${d.slice(5,7)}`;
+}
+
 // CEST oficial por NCM, conforme Instrução Normativa DIAT nº 1/2023 (Anexo I — Convênio ICMS 142/2018).
+// Armazenado sem pontuação (dígitos puros) — a formatação para exibição é feita por formatCest().
 // Usado para consultar se o NCM tem CEST cadastrado na normativa, mesmo que a nota não traga a tag <CEST>.
 const ICMS_AC_CEST_NCM = {
-  '2401':'04.001.00', '2402':'04.001.00', '2403':'04.002.00', // cigarros/tabaco
-  '2523':'05.001.00',                                          // cimento
+  '2401':'0400100', '2402':'0400100', '2403':'0400200', // cigarros/tabaco
+  '2523':'0500100',                                      // cimento
 };
 
 // NCM (4 dígitos) sujeitos a Substituição Tributária no Acre, com alíquota efetiva de ST
@@ -1198,18 +1210,24 @@ const ICMS_AC_ST_NCM = {
  * Operações internas (origem AC) não geram ST/antecipação.
  */
 function getIcmsEntradaAcre(ncm, ufOrigem, origCodigo, cestXml) {
-  const n  = String(ncm || '').replace(/\D/g, '');
-  const uf = (ufOrigem || '').toUpperCase();
+  // Normaliza removendo pontos/traços, para casar "2402", "2402.10.00" e "24021000" sem diferença,
+  // e "0400100" com "04.001.00" da mesma forma.
+  const n        = normalizeDigits(ncm);
+  const cestXmlN = normalizeDigits(cestXml) || null;
+  const uf       = (ufOrigem || '').toUpperCase();
 
-  if (!n) return { tipo: 'nenhum', aliquota: 0, aliquotaInterestadual: null, cest: null, cestFonte: null };
-  if (uf === 'AC' || !uf) return { tipo: 'nenhum', aliquota: 0, aliquotaInterestadual: null, cest: null, cestFonte: null }; // operação interna ou UF não informada
+  if (!n) return { tipo: 'nenhum', aliquota: 0, aliquotaInterestadual: null, cest: null, cestFonte: null, cestDivergente: false };
+  if (uf === 'AC' || !uf) return { tipo: 'nenhum', aliquota: 0, aliquotaInterestadual: null, cest: null, cestFonte: null, cestDivergente: false }; // operação interna ou UF não informada
 
   // Consulta o NCM na tabela oficial da normativa, independente do que veio na nota
-  const cestNormativa = ICMS_AC_CEST_NCM[n.slice(0, 4)] || null;
-  const cest       = cestXml || cestNormativa;
-  const cestFonte  = cestXml ? 'xml' : (cestNormativa ? 'normativa' : null);
+  const cestNormativaN = ICMS_AC_CEST_NCM[n.slice(0, 4)] || null;
+  const cestN      = cestXmlN || cestNormativaN;
+  const cestFonte  = cestXmlN ? 'xml' : (cestNormativaN ? 'normativa' : null);
+  // Sinaliza se a nota trouxe um CEST diferente do que consta na normativa para esse NCM
+  const cestDivergente = !!(cestXmlN && cestNormativaN && cestXmlN !== cestNormativaN);
+  const cest = formatCest(cestN);
 
-  if (!cest) return { tipo: 'nenhum', aliquota: 0, aliquotaInterestadual: null, cest: null, cestFonte: null };
+  if (!cestN) return { tipo: 'nenhum', aliquota: 0, aliquotaInterestadual: null, cest: null, cestFonte: null, cestDivergente: false };
 
   const aliqInter = getAliquotaInterestadualAC(uf, origCodigo);
 
@@ -1217,16 +1235,16 @@ function getIcmsEntradaAcre(ncm, ufOrigem, origCodigo, cestXml) {
   const stEntry = ICMS_AC_ST_NCM[n.slice(0, 4)];
   if (stEntry != null) {
     const aliquota = typeof stEntry === 'object' ? (stEntry[aliqInter] ?? stEntry[12]) : stEntry;
-    return { tipo: 'ST', aliquota, aliquotaInterestadual: aliqInter, cest, cestFonte };
+    return { tipo: 'ST', aliquota, aliquotaInterestadual: aliqInter, cest, cestFonte, cestDivergente };
   }
 
   // 2. Se isento conforme banco fiscal, não há antecipação
   const fiscal = getNcmFiscal(n);
-  if (fiscal?.isen) return { tipo: 'nenhum', aliquota: 0, aliquotaInterestadual: aliqInter, cest, cestFonte };
+  if (fiscal?.isen) return { tipo: 'nenhum', aliquota: 0, aliquotaInterestadual: aliqInter, cest, cestFonte, cestDivergente };
 
   // 3. Caso contrário, antecipação parcial = diferencial entre alíquota interna AC e interestadual de origem
   const diferencial = Math.max(0, ICMS_AC_ALIQUOTA_INTERNA - aliqInter);
-  return { tipo: 'antecipacao', aliquota: diferencial, aliquotaInterestadual: aliqInter, cest, cestFonte };
+  return { tipo: 'antecipacao', aliquota: diferencial, aliquotaInterestadual: aliqInter, cest, cestFonte, cestDivergente };
 }
 
 const DEMO_PRODUTOS = [
@@ -2021,6 +2039,7 @@ function processXmlFile(file) {
           cest,                                // CEST informado na nota (pode ser null)
           cestResolvido: icmsEntradaAuto.cest,       // CEST efetivamente usado (nota ou consulta à normativa)
           cestFonte: icmsEntradaAuto.cestFonte,      // 'xml' | 'normativa' | null
+          cestDivergente: icmsEntradaAuto.cestDivergente, // true se o CEST da nota difere do oficial p/ esse NCM
           icmsEntradaTipo: icmsEntradaAuto.tipo,                       // 'ST' | 'antecipacao' | 'nenhum'
           icmsEntradaAliquota: icmsEntradaAuto.aliquota,               // % automático
           icmsEntradaAliquotaInterestadual: icmsEntradaAuto.aliquotaInterestadual, // 12 | 7 | 4
@@ -2917,6 +2936,11 @@ function renderSidebarDetail(alq, defaultMargem, defaultFrete, icmsE) {
             : `<span class="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 text-[9px] font-bold">Sem CEST (nota e normativa)</span>`}
           ${p.icmsEntradaAliquotaInterestadual != null ? `<span class="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-[9px] font-bold">Alíq. interestadual: ${p.icmsEntradaAliquotaInterestadual}%${Number(p.origCodigo) ? ' (importado)' : ''}</span>` : ''}
         </div>
+        ${p.cestDivergente ? `
+          <div class="flex items-center gap-1.5 text-[10px] text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-lg px-2 py-1.5 mb-2">
+            <i data-lucide="alert-triangle" class="w-3 h-3 shrink-0"></i>
+            CEST da nota (${formatCest(p.cest)}) diverge do CEST oficial na normativa AC para o NCM ${p.ncm} (${formatCest(ICMS_AC_CEST_NCM[normalizeDigits(p.ncm).slice(0,4)])}). Confira manualmente.
+          </div>` : ''}
         <div class="grid grid-cols-2 gap-2 mb-2">
           <div>
             <div class="text-[9px] font-bold text-orange-400 uppercase tracking-wider mb-1">Alíquota Automática (%)</div>
