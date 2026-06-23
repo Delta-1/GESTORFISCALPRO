@@ -1945,6 +1945,8 @@ async function doLogout() {
   stopStatusPolling();
   if (sb && !isDemo) await sb.auth.signOut().catch(()=>{});
   currentUser = null; isDemo = false; empresaData = {}; produtos = []; isAdmin = false;
+  _aiConfigCache = null;
+  aiChatHistory = [];
   hideAllScreens();
   document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('products-section').classList.add('hidden');
@@ -2396,7 +2398,7 @@ function switchTab(n) {
   });
   activeTab = n;
   if (n === 1) loadHistory();
-  if (n === 3) document.getElementById('ai-no-key').classList.toggle('hidden', !!getAiConfig().apiKey);
+  if (n === 3) getAiConfig().then(cfg => document.getElementById('ai-no-key').classList.toggle('hidden', !!cfg.apiKey));
 }
 
 /* ════════════════════════════════════════════════
@@ -2483,22 +2485,47 @@ function setCfgTab(name) {
 /* ════════════════════════════════════════════════
    ASSISTENTE IA
 ════════════════════════════════════════════════ */
-function getAiConfig() {
+// Config de IA é guardada no Supabase (tabela ai_config, protegida por RLS por usuário).
+// No modo demo (sem login real), usa localStorage como fallback.
+let _aiConfigCache = null;
+
+async function getAiConfig() {
+  if (isDemo || !sb || !currentUser) {
+    try { return JSON.parse(localStorage.getItem('gf_ai_config') || '{}'); } catch(e) { return {}; }
+  }
+  if (_aiConfigCache) return _aiConfigCache;
   try {
-    return JSON.parse(localStorage.getItem('gf_ai_config') || '{}');
+    const { data } = await sb.from('ai_config').select('provider, api_key').eq('user_id', currentUser.id).maybeSingle();
+    _aiConfigCache = data ? { provider: data.provider, apiKey: data.api_key } : {};
+    return _aiConfigCache;
   } catch(e) { return {}; }
 }
 
-function saveAiConfig() {
+async function saveAiConfig() {
   const provider = document.getElementById('cfg-ai-provider').value;
   const apiKey   = document.getElementById('cfg-ai-key').value.trim();
   if (!apiKey) { toast('Cole uma chave de API válida.', 'warning'); return; }
-  localStorage.setItem('gf_ai_config', JSON.stringify({ provider, apiKey }));
-  toast('Configuração de IA salva neste navegador!', 'success');
+
+  if (isDemo || !sb || !currentUser) {
+    localStorage.setItem('gf_ai_config', JSON.stringify({ provider, apiKey }));
+    toast('Configuração de IA salva neste navegador (modo demo).', 'success');
+    return;
+  }
+  try {
+    const { error } = await sb.from('ai_config').upsert(
+      { user_id: currentUser.id, provider, api_key: apiKey },
+      { onConflict: 'user_id' }
+    );
+    if (error) throw error;
+    _aiConfigCache = { provider, apiKey };
+    toast('Configuração de IA salva na sua conta!', 'success');
+  } catch(e) {
+    toast('Erro ao salvar: ' + e.message, 'error');
+  }
 }
 
-function loadAiConfigToForm() {
-  const cfg = getAiConfig();
+async function loadAiConfigToForm() {
+  const cfg = await getAiConfig();
   if (cfg.provider) document.getElementById('cfg-ai-provider').value = cfg.provider;
   if (cfg.apiKey)   document.getElementById('cfg-ai-key').value = cfg.apiKey;
 }
@@ -2580,7 +2607,7 @@ Se o usuário enviar dados de produtos (NCM, CST, CEST, valores), ajude a revisa
 }
 
 async function aiCallAndRender(userText) {
-  const cfg = getAiConfig();
+  const cfg = await getAiConfig();
   if (!cfg.apiKey) { toast('Configure sua chave de API em Configurações → Assistente IA.', 'warning'); return; }
 
   appendAiMessage('user', userText);
