@@ -1129,6 +1129,50 @@ const CST_PIS_LABEL = {
   '08':'08 — Sem incidência','09':'09 — Suspensão',
 };
 
+/* ════════════════════════════════════════════════
+   AUTOMAÇÃO FISCAL — ICMS DE ENTRADA (ESTADO DO ACRE)
+   NCM + UF de origem → ICMS-ST ou Antecipação Parcial
+════════════════════════════════════════════════ */
+const ICMS_AC_ALIQUOTA_INTERNA = 19; // alíquota interna padrão do ICMS no Acre
+const ICMS_AC_INTERESTADUAL    = 12; // alíquota interestadual padrão (origem Sul/Sudeste/Centro-Oeste)
+
+// NCM (4 dígitos) sujeitos a Substituição Tributária no Acre, com alíquota efetiva de ST estimada
+const ICMS_AC_ST_NCM = {
+  '2202':25, '2203':25, '2204':25, '2208':25,   // bebidas
+  '2401':45, '2402':45, '2403':45,              // tabaco/cigarros
+  '3303':36, '3304':36, '3305':36,              // perfumaria/cosméticos
+  '3208':30, '3209':30,                         // tintas e vernizes
+  '4011':25,                                    // pneus
+  '8517':30, '8528':30, '8471':30,              // eletrônicos/informática
+  '8703':25,                                     // veículos
+  '2710':30,                                     // combustíveis/lubrificantes
+};
+
+/**
+ * Determina o tipo e a alíquota de ICMS de entrada (ST ou Antecipação Parcial)
+ * de acordo com a normativa do Estado do Acre, a partir do NCM e da UF de origem.
+ * Operações internas (origem AC) não geram ST/antecipação.
+ */
+function getIcmsEntradaAcre(ncm, ufOrigem) {
+  const n  = String(ncm || '').replace(/\D/g, '');
+  const uf = (ufOrigem || '').toUpperCase();
+
+  if (!n) return { tipo: 'nenhum', aliquota: 0 };
+  if (uf === 'AC' || !uf) return { tipo: 'nenhum', aliquota: 0 }; // operação interna ou UF não informada
+
+  // 1. Verifica se o NCM está sujeito a Substituição Tributária no Acre
+  const stAliq = ICMS_AC_ST_NCM[n.slice(0, 4)];
+  if (stAliq != null) return { tipo: 'ST', aliquota: stAliq };
+
+  // 2. Se isento conforme banco fiscal, não há antecipação
+  const fiscal = getNcmFiscal(n);
+  if (fiscal?.isen) return { tipo: 'nenhum', aliquota: 0 };
+
+  // 3. Caso contrário, antecipação parcial = diferencial entre alíquota interna AC e interestadual
+  const diferencial = Math.max(0, ICMS_AC_ALIQUOTA_INTERNA - ICMS_AC_INTERESTADUAL);
+  return { tipo: 'antecipacao', aliquota: diferencial };
+}
+
 const DEMO_PRODUTOS = [
   { descricao:'Cabo Cat6 5m',              ncm:'85444299', qCom:50, vUnCom:12.90,  ipi: getIpiFromNcm('85444299') },
   { descricao:'Roteador Wi-Fi Dual Band',  ncm:'85176200', qCom:10, vUnCom:189.90, ipi: getIpiFromNcm('85176200') },
@@ -1848,6 +1892,12 @@ function processXmlFile(file) {
         xml.querySelector('vFrete')?.textContent || '0'
       ) || 0;
 
+      // UF de origem do emitente (fornecedor) — usada na automação fiscal de ICMS entrada
+      const ufOrigem = (
+        xml.querySelector('emit enderEmit UF')?.textContent ||
+        xml.querySelector('emit UF')?.textContent || ''
+      ).trim().toUpperCase();
+
       // Valor total dos produtos para distribuição proporcional do frete
       const vTotalProd = dets.reduce((s, d) => {
         return s + parseFloat(d.querySelector('vProd')?.textContent || 0);
@@ -1859,7 +1909,14 @@ function processXmlFile(file) {
         const vUnCom = parseFloat(det.querySelector('vUnCom')?.textContent || 0);
         const vProd  = parseFloat(det.querySelector('vProd')?.textContent || 0);
 
-        // IPI: lê do XML (<pIPI>); fallback TIPI
+        // Desconto comercial do item (vDesc) — direto do XML
+        const vDesc  = parseFloat(det.querySelector('vDesc')?.textContent || 0) || 0;
+        // Outras despesas acessórias do item (vOutro) — direto do XML
+        const vOutro = parseFloat(det.querySelector('vOutro')?.textContent || 0) || 0;
+        // ICMS desonerado (benefício Suframa / ZFM-ALC) — qualquer grupo ICMSxx do item
+        const vICMSDeson = parseFloat(det.querySelector('imposto ICMS vICMSDeson')?.textContent || 0) || 0;
+
+        // IPI: lê do XML (<pIPI>); fallback TIPI (não exibido na tela de Custo de Entrada — SN/LP)
         const pIpiXml = parseFloat(det.querySelector('pIPI')?.textContent || '');
         const ipiRate = !isNaN(pIpiXml) ? pIpiXml : getIpiFromNcm(ncm);
 
@@ -1872,6 +1929,9 @@ function processXmlFile(file) {
         // Dados fiscais do NCM
         const fiscal = getNcmFiscal(ncm);
 
+        // Automação fiscal: ICMS de entrada (ST / Antecipação Parcial) — Estado do Acre
+        const icmsEntradaAuto = getIcmsEntradaAcre(ncm, ufOrigem);
+
         return {
           descricao: det.querySelector('xProd')?.textContent || '—',
           ncm, qCom, vUnCom,
@@ -1879,6 +1939,12 @@ function processXmlFile(file) {
           freteRS,             // frete em R$/unidade vindo do XML
           freteXml: freteRS,   // cópia imutável para referência
           ncmFiscal: fiscal,   // dados CST/ST/isenção
+          desconto: vDesc / qCom || 0,        // R$/unidade — vem do XML (vDesc)
+          outrasDespesas: vOutro / qCom || 0, // R$/unidade — vem do XML (vOutro)
+          icmsDesonerado: vICMSDeson / qCom || 0, // R$/unidade — benefício Suframa
+          ufOrigem,                           // UF do fornecedor (origem da mercadoria)
+          icmsEntradaTipo: icmsEntradaAuto.tipo,       // 'ST' | 'antecipacao' | 'nenhum'
+          icmsEntradaAliquota: icmsEntradaAuto.aliquota, // % automático
         };
       });
       toast(`${produtos.length} produto(s) carregado(s)!`, 'success');
@@ -2596,25 +2662,22 @@ function renderSidebarDetail(alq, defaultMargem, defaultFrete, icmsE) {
   const fiscal  = p.ncmFiscal    || getNcmFiscal(p.ncm);
   const despPct = despesasTotalPct;
 
-  // ── CUSTO DE ENTRADA ──────────────────────────────
-  const precoCompra    = p.vUnCom;
-  const desconto       = p.desconto      ?? 0;
-  const freteVal       = f; // já em R$/unidade
-  const outrasDespesas = p.outrasDespesas ?? 0;
-  const seguros        = p.seguros        ?? 0;
-  const perdaPct       = p.perdaPct       ?? 0;
-  const perdaVal       = precoCompra * perdaPct / 100;
-  const precoLiquido   = precoCompra - desconto + freteVal + outrasDespesas + seguros + perdaVal;
+  // ── CUSTO DE ENTRADA (conforme especificação) ─────
+  const precoCompra     = p.vUnCom;                       // vUnProd — direto do XML
+  const desconto        = p.desconto        ?? 0;          // vDesc — direto do XML
+  const freteVal        = f;                                // vFrete rateado — já em R$/unidade
+  const outrasDespesas  = p.outrasDespesas  ?? 0;          // vOutro — direto do XML
+  const icmsDesonerado  = p.icmsDesonerado  ?? 0;          // vICMSDeson — benefício Suframa/ZFM-ALC
 
-  // ── CST ENTRADA ────────────────────────────────────
-  const ipiVal         = precoCompra * ipi / 100;
-  const icmsST         = p.icmsST ?? 0;
-  // Crédito ICMS: LP e LR aproveitam crédito da entrada
-  const creditoICMS    = (regime === 'LP' || regime === 'LR') ? precoCompra * icmsE / 100 : 0;
-  // Crédito PIS/COFINS: apenas Lucro Real (não-cumulativo)
-  const creditoPisCof  = regime === 'LR' ? precoCompra * (LR.pis + LR.cofins) : 0;
-  const custoContabil  = precoLiquido + ipiVal + icmsST - creditoICMS - creditoPisCof;
-  const cmv            = custoContabil;
+  // ── ICMS DE ENTRADA — automação fiscal (NCM + UF origem → Estado do Acre) ──
+  const icmsEntradaTipo      = p.icmsEntradaTipo      ?? 'nenhum';
+  const icmsEntradaAliquota  = p.icmsEntradaAliquotaOverride ?? p.icmsEntradaAliquota ?? 0;
+  const icmsEntradaVal       = precoCompra * icmsEntradaAliquota / 100;
+  const ICMS_TIPO_LABEL = { ST:'Substituição Tributária', antecipacao:'Antecipação Parcial', nenhum:'Sem incidência' };
+
+  // ── CMV: Custo Final = Valor do Produto - Descontos + Frete + Outras Despesas + ICMS Entrada ──
+  const cmv = precoCompra - desconto + freteVal + outrasDespesas + icmsEntradaVal;
+  const custoContabil = cmv;
 
   // ── PREÇO DE VENDA ────────────────────────────────
   const divisor        = 1 - alq - m / 100 - despPct / 100;
@@ -2701,15 +2764,16 @@ function renderSidebarDetail(alq, defaultMargem, defaultFrete, icmsE) {
       <div class="bg-blue-50 dark:bg-blue-950/30 px-4 py-2 flex items-center gap-2 border-b border-blue-200 dark:border-blue-900/40">
         <i data-lucide="package" class="w-3.5 h-3.5 text-blue-500"></i>
         <span class="text-[11px] font-extrabold text-blue-700 dark:text-blue-300 uppercase tracking-wider">Custo de Entrada</span>
+        ${p.ufOrigem ? `<span class="ml-auto text-[9px] font-mono text-slate-400">UF origem: ${p.ufOrigem}</span>` : ''}
       </div>
       <div class="p-3 space-y-1">
         <div class="grid grid-cols-2 gap-2 mb-2">
           <div>
-            <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Preço de Compra (R$)</div>
+            <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Preço de Compra (R$)<span class="ml-1 text-blue-400 normal-case font-normal">do XML</span></div>
             <div class="px-2 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg">${fmtBRL(precoCompra)}</div>
           </div>
           <div>
-            <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">(-) Descontos (R$)</div>
+            <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">(-) Desconto (R$)${p.desconto>0?'<span class="ml-1 text-blue-400 normal-case font-normal">do XML</span>':''}</div>
             ${sInp('desconto', desconto||'', 9999, '0.01')}
           </div>
           <div>
@@ -2719,55 +2783,49 @@ function renderSidebarDetail(alq, defaultMargem, defaultFrete, icmsE) {
               class="sb-inp w-full px-2 py-1.5 text-xs bg-white dark:bg-slate-900 border ${p.freteXml>0?'border-blue-300 dark:border-blue-700':'border-slate-200 dark:border-slate-700'} rounded-lg focus:ring-1 focus:ring-emerald-500 outline-none text-slate-700 dark:text-slate-200">
           </div>
           <div>
-            <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">(+) Outras Despesas (R$)</div>
+            <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">(+) Outras Despesas (R$)${p.outrasDespesas>0?'<span class="ml-1 text-blue-400 normal-case font-normal">do XML</span>':''}</div>
             ${sInp('outrasDespesas', outrasDespesas||'', 9999, '0.01')}
           </div>
-          <div>
-            <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">(+) Seguros (R$)</div>
-            ${sInp('seguros', seguros||'', 9999, '0.01')}
-          </div>
-          <div>
-            <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">(+) Perda/Quebra (%)</div>
-            ${sInp('perdaPct', perdaPct||'', 100, '0.1')}
-          </div>
         </div>
+        ${icmsDesonerado > 0 ? `
+          <div class="flex items-center justify-between py-1.5 px-2 mb-1 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200 dark:border-emerald-900/40">
+            <span class="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1"><i data-lucide="shield-check" class="w-3 h-3"></i> ICMS Desonerado (Suframa/ZFM-ALC)</span>
+            <span class="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400">${fmtBRL(icmsDesonerado)}</span>
+          </div>` : ''}
         ${row('Preço de Compra', precoCompra, '')}
-        ${desconto > 0 ? row('Descontos', desconto, 'text-red-400', '-') : ''}
-        ${freteVal > 0 ? row(`Frete (${f}%)`, freteVal, '') : ''}
+        ${desconto > 0 ? row('Desconto', desconto, 'text-red-400', '-') : ''}
+        ${freteVal > 0 ? row('Frete (rateado)', freteVal, '') : ''}
         ${outrasDespesas > 0 ? row('Outras Despesas', outrasDespesas, '') : ''}
-        ${seguros > 0 ? row('Seguros', seguros, '') : ''}
-        ${perdaVal > 0 ? row(`Perda/Quebra (${perdaPct}%)`, perdaVal, '') : ''}
-        ${total('Preço Líquido', precoLiquido, 'text-blue-600 dark:text-blue-400')}
       </div>
     </div>
 
-    <!-- ② CST ENTRADA -->
+    <!-- ② ICMS DE ENTRADA — AUTOMAÇÃO FISCAL (NCM + UF ORIGEM) -->
     <div class="bg-white dark:bg-[#0f172a] border border-orange-200 dark:border-orange-900/40 rounded-xl overflow-hidden">
       <div class="bg-orange-50 dark:bg-orange-950/20 px-4 py-2 flex items-center gap-2 border-b border-orange-200 dark:border-orange-900/40">
-        <i data-lucide="file-text" class="w-3.5 h-3.5 text-orange-500"></i>
-        <span class="text-[11px] font-extrabold text-orange-700 dark:text-orange-300 uppercase tracking-wider">CST Entrada — Tributação</span>
+        <i data-lucide="landmark" class="w-3.5 h-3.5 text-orange-500"></i>
+        <span class="text-[11px] font-extrabold text-orange-700 dark:text-orange-300 uppercase tracking-wider">ICMS de Entrada — Estado do Acre</span>
       </div>
       <div class="p-3 space-y-1">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${icmsEntradaTipo==='ST'?'bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400':icmsEntradaTipo==='antecipacao'?'bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400':'bg-slate-100 dark:bg-slate-800 text-slate-400'}">
+            ${ICMS_TIPO_LABEL[icmsEntradaTipo] || icmsEntradaTipo}
+          </span>
+          <span class="text-[10px] text-slate-400">NCM ${p.ncm} · origem ${p.ufOrigem || '—'}</span>
+        </div>
         <div class="grid grid-cols-2 gap-2 mb-2">
           <div>
-            <div class="text-[9px] font-bold text-orange-400 uppercase tracking-wider mb-1">(+) IPI — TIPI: ${ipi}%</div>
-            <input type="number" value="${ipi}" min="0" max="500" step="0.5"
-              onchange="produtos[${idx}].ipi=parseFloat(this.value)||0;renderSidebar();"
+            <div class="text-[9px] font-bold text-orange-400 uppercase tracking-wider mb-1">Alíquota Automática (%)</div>
+            <input type="number" value="${icmsEntradaAliquota}" min="0" max="100" step="0.1"
+              onchange="produtos[${idx}].icmsEntradaAliquotaOverride=parseFloat(this.value)||0;renderSidebar();"
               class="sb-inp w-full px-2 py-1.5 text-xs bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg focus:ring-1 focus:ring-orange-400 outline-none text-orange-700 dark:text-orange-300 font-bold">
           </div>
           <div>
-            <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">(+) ICMS-ST Entrada (R$)</div>
-            ${sInp('icmsST', icmsST||'', 9999, '0.01')}
+            <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Valor Calculado (R$)</div>
+            <div class="px-2 py-1.5 text-xs font-bold text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg">${fmtBRL(icmsEntradaVal)}</div>
           </div>
         </div>
-        ${row(`IPI (${ipi}% sobre R$ ${precoCompra.toFixed(2)})`, ipiVal, 'text-orange-500')}
-        ${icmsST > 0 ? row('ICMS-ST Entrada', icmsST, 'text-orange-500') : ''}
-        ${creditoICMS > 0 ? row(`Crédito ICMS Entrada (${icmsE}%)`, creditoICMS, 'text-emerald-500', '-') : ''}
-        ${creditoPisCof > 0 ? row('Crédito PIS/COFINS (LR)', creditoPisCof, 'text-emerald-500', '-') : ''}
-        ${regime === 'SN' ? `<div class="text-[10px] text-slate-400 py-1 italic">Simples Nacional: sem crédito de ICMS/PIS/COFINS na entrada.</div>` : ''}
-        ${regime === 'MEI' ? `<div class="text-[10px] text-slate-400 py-1 italic">MEI: sem crédito tributário na entrada.</div>` : ''}
-        ${total('Custo Contábil', custoContabil)}
-        <div class="flex items-center justify-between pt-1">
+        ${icmsEntradaVal > 0 ? row(`ICMS Entrada (${icmsEntradaAliquota}% sobre R$ ${precoCompra.toFixed(2)})`, icmsEntradaVal, 'text-orange-500') : `<div class="text-[10px] text-slate-400 py-1 italic">Sem incidência de ICMS-ST/Antecipação para este item (operação interna ou NCM isento).</div>`}
+        <div class="flex items-center justify-between pt-2 mt-1 border-t-2 border-slate-200 dark:border-slate-700">
           <span class="text-[11px] font-extrabold text-slate-600 dark:text-slate-300"><span class="text-slate-400">(=)</span> CMV (Custo da Mercadoria)</span>
           <span class="text-sm font-extrabold text-blue-700 dark:text-blue-300">${fmtBRL(cmv)}</span>
         </div>
