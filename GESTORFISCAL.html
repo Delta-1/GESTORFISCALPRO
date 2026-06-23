@@ -1161,6 +1161,13 @@ function getAliquotaInterestadualAC(ufOrigem, origCodigo) {
   return 12;
 }
 
+// CEST oficial por NCM, conforme Instrução Normativa DIAT nº 1/2023 (Anexo I — Convênio ICMS 142/2018).
+// Usado para consultar se o NCM tem CEST cadastrado na normativa, mesmo que a nota não traga a tag <CEST>.
+const ICMS_AC_CEST_NCM = {
+  '2401':'04.001.00', '2402':'04.001.00', '2403':'04.002.00', // cigarros/tabaco
+  '2523':'05.001.00',                                          // cimento
+};
+
 // NCM (4 dígitos) sujeitos a Substituição Tributária no Acre, com alíquota efetiva de ST
 // por faixa de alíquota interestadual de origem (12% / 7% / 4%).
 // Fonte oficial confirmada (Instrução Normativa DIAT nº 1/2023, Anexo I): 2401-2403, 2523.
@@ -1179,33 +1186,47 @@ const ICMS_AC_ST_NCM = {
 
 /**
  * Determina o tipo e a alíquota de ICMS de entrada (ST ou Antecipação Parcial)
- * de acordo com a normativa do Estado do Acre, a partir do NCM, da UF de origem
- * e do código <orig> do item (indica se é importado).
+ * de acordo com a normativa do Estado do Acre, a partir do NCM, da UF de origem,
+ * do código <orig> do item (indica se é importado) e do CEST.
+ *
+ * O CEST é consultado em duas fontes, nesta ordem de prioridade:
+ *  1. CEST informado na própria nota (cestXml) — dado real, prevalece;
+ *  2. Consulta do NCM contra a tabela oficial da IN DIAT nº 1/2023 (ICMS_AC_CEST_NCM) —
+ *     usada quando a nota não trouxe o CEST, mas o NCM está cadastrado na normativa.
+ * Se nenhuma das duas fontes indicar CEST, não há base legal para ST/Antecipação.
+ *
  * Operações internas (origem AC) não geram ST/antecipação.
  */
-function getIcmsEntradaAcre(ncm, ufOrigem, origCodigo) {
+function getIcmsEntradaAcre(ncm, ufOrigem, origCodigo, cestXml) {
   const n  = String(ncm || '').replace(/\D/g, '');
   const uf = (ufOrigem || '').toUpperCase();
 
-  if (!n) return { tipo: 'nenhum', aliquota: 0, aliquotaInterestadual: null };
-  if (uf === 'AC' || !uf) return { tipo: 'nenhum', aliquota: 0, aliquotaInterestadual: null }; // operação interna ou UF não informada
+  if (!n) return { tipo: 'nenhum', aliquota: 0, aliquotaInterestadual: null, cest: null, cestFonte: null };
+  if (uf === 'AC' || !uf) return { tipo: 'nenhum', aliquota: 0, aliquotaInterestadual: null, cest: null, cestFonte: null }; // operação interna ou UF não informada
+
+  // Consulta o NCM na tabela oficial da normativa, independente do que veio na nota
+  const cestNormativa = ICMS_AC_CEST_NCM[n.slice(0, 4)] || null;
+  const cest       = cestXml || cestNormativa;
+  const cestFonte  = cestXml ? 'xml' : (cestNormativa ? 'normativa' : null);
+
+  if (!cest) return { tipo: 'nenhum', aliquota: 0, aliquotaInterestadual: null, cest: null, cestFonte: null };
 
   const aliqInter = getAliquotaInterestadualAC(uf, origCodigo);
 
-  // 1. Verifica se o NCM está sujeito a Substituição Tributária no Acre
+  // 1. Verifica se o NCM está sujeito a Substituição Tributária no Acre (tem MVA/multiplicador cadastrado)
   const stEntry = ICMS_AC_ST_NCM[n.slice(0, 4)];
   if (stEntry != null) {
     const aliquota = typeof stEntry === 'object' ? (stEntry[aliqInter] ?? stEntry[12]) : stEntry;
-    return { tipo: 'ST', aliquota, aliquotaInterestadual: aliqInter };
+    return { tipo: 'ST', aliquota, aliquotaInterestadual: aliqInter, cest, cestFonte };
   }
 
   // 2. Se isento conforme banco fiscal, não há antecipação
   const fiscal = getNcmFiscal(n);
-  if (fiscal?.isen) return { tipo: 'nenhum', aliquota: 0, aliquotaInterestadual: aliqInter };
+  if (fiscal?.isen) return { tipo: 'nenhum', aliquota: 0, aliquotaInterestadual: aliqInter, cest, cestFonte };
 
   // 3. Caso contrário, antecipação parcial = diferencial entre alíquota interna AC e interestadual de origem
   const diferencial = Math.max(0, ICMS_AC_ALIQUOTA_INTERNA - aliqInter);
-  return { tipo: 'antecipacao', aliquota: diferencial, aliquotaInterestadual: aliqInter };
+  return { tipo: 'antecipacao', aliquota: diferencial, aliquotaInterestadual: aliqInter, cest, cestFonte };
 }
 
 const DEMO_PRODUTOS = [
@@ -1977,11 +1998,10 @@ function processXmlFile(file) {
         // Dados fiscais do NCM
         const fiscal = getNcmFiscal(ncm);
 
-        // Automação fiscal: ICMS de entrada (ST / Antecipação Parcial) — Estado do Acre
-        // Só calcula se o item tiver CEST na nota — sem CEST não há base legal para ST/Antecipação.
-        const icmsEntradaAuto = cest
-          ? getIcmsEntradaAcre(ncm, ufOrigem, origCodigo)
-          : { tipo: 'nenhum', aliquota: 0, aliquotaInterestadual: null };
+        // Automação fiscal: ICMS de entrada (ST / Antecipação Parcial) — Estado do Acre.
+        // A função consulta o CEST da nota e também o NCM contra a normativa oficial (IN DIAT 1/2023);
+        // só calcula ST/Antecipação se uma das duas fontes confirmar que o NCM tem CEST.
+        const icmsEntradaAuto = getIcmsEntradaAcre(ncm, ufOrigem, origCodigo, cest);
 
         return {
           descricao: det.querySelector('xProd')?.textContent || '—',
@@ -1998,7 +2018,9 @@ function processXmlFile(file) {
           ufOrigem,                           // UF do fornecedor (origem da mercadoria)
           origCodigo,                          // código <orig> (0-8) — indica importação
           cstXml, csosnXml,                    // CST/CSOSN real do ICMS, lido direto da nota
-          cest,                                // CEST — se ausente, sem ST/Antecipação
+          cest,                                // CEST informado na nota (pode ser null)
+          cestResolvido: icmsEntradaAuto.cest,       // CEST efetivamente usado (nota ou consulta à normativa)
+          cestFonte: icmsEntradaAuto.cestFonte,      // 'xml' | 'normativa' | null
           icmsEntradaTipo: icmsEntradaAuto.tipo,                       // 'ST' | 'antecipacao' | 'nenhum'
           icmsEntradaAliquota: icmsEntradaAuto.aliquota,               // % automático
           icmsEntradaAliquotaInterestadual: icmsEntradaAuto.aliquotaInterestadual, // 12 | 7 | 4
@@ -2890,7 +2912,9 @@ function renderSidebarDetail(alq, defaultMargem, defaultFrete, icmsE) {
             ${ICMS_TIPO_LABEL[icmsEntradaTipo] || icmsEntradaTipo}
           </span>
           <span class="text-[10px] text-slate-400">NCM ${p.ncm} · origem ${p.ufOrigem || '—'}</span>
-          ${p.cest ? `<span class="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-[9px] font-bold">CEST ${p.cest}</span>` : `<span class="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 text-[9px] font-bold">Sem CEST</span>`}
+          ${p.cestResolvido
+            ? `<span class="px-1.5 py-0.5 rounded-full ${p.cestFonte==='xml'?'bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400':'bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400'} text-[9px] font-bold">CEST ${p.cestResolvido} ${p.cestFonte==='xml' ? '(da nota)' : '(consultado na normativa AC)'}</span>`
+            : `<span class="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 text-[9px] font-bold">Sem CEST (nota e normativa)</span>`}
           ${p.icmsEntradaAliquotaInterestadual != null ? `<span class="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-[9px] font-bold">Alíq. interestadual: ${p.icmsEntradaAliquotaInterestadual}%${Number(p.origCodigo) ? ' (importado)' : ''}</span>` : ''}
         </div>
         <div class="grid grid-cols-2 gap-2 mb-2">
@@ -2905,7 +2929,7 @@ function renderSidebarDetail(alq, defaultMargem, defaultFrete, icmsE) {
             <div class="px-2 py-1.5 text-xs font-bold text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg">${fmtBRL(icmsEntradaVal)}</div>
           </div>
         </div>
-        ${icmsEntradaVal > 0 ? row(`ICMS Entrada (${icmsEntradaAliquota}% sobre R$ ${precoCompra.toFixed(2)})`, icmsEntradaVal, 'text-orange-500') : `<div class="text-[10px] text-slate-400 py-1 italic">${!p.cest ? 'Item sem CEST na nota — sem base legal para destacar ICMS-ST/Antecipação.' : 'Sem incidência de ICMS-ST/Antecipação para este item (operação interna ou NCM isento).'}</div>`}
+        ${icmsEntradaVal > 0 ? row(`ICMS Entrada (${icmsEntradaAliquota}% sobre R$ ${precoCompra.toFixed(2)})`, icmsEntradaVal, 'text-orange-500') : `<div class="text-[10px] text-slate-400 py-1 italic">${!p.cestResolvido ? 'NCM sem CEST — não consta na nota nem na normativa do Acre (IN DIAT 1/2023). Sem base legal para ST/Antecipação.' : 'Sem incidência de ICMS-ST/Antecipação para este item (operação interna ou NCM isento).'}</div>`}
         <div class="flex items-center justify-between pt-2 mt-1 border-t-2 border-slate-200 dark:border-slate-700">
           <span class="text-[11px] font-extrabold text-slate-600 dark:text-slate-300"><span class="text-slate-400">(=)</span> CMV (Custo da Mercadoria)</span>
           <span class="text-sm font-extrabold text-blue-700 dark:text-blue-300">${fmtBRL(cmv)}</span>
