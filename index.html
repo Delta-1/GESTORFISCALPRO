@@ -2142,6 +2142,7 @@ function processXmlFile(file) {
       });
       toast(`${produtos.length} produto(s) carregado(s)!`, 'success');
       renderProducts();
+      aiAutoReviewXml(); // se a IA estiver configurada, revisa e ajusta os valores automaticamente
     } catch(err) { toast('Erro ao processar XML: ' + err.message, 'error'); }
   };
   reader.readAsText(file, 'UTF-8');
@@ -2666,6 +2667,93 @@ function aiAnalisarXmlAtual() {
   }).join('\n');
   const prompt = `Analise os itens desta nota fiscal de entrada que carreguei no sistema e aponte qualquer inconsistência que você notar (CST incompatível com o NCM, CEST ausente em produto que parece sujeito a ST, alíquota de ICMS fora do esperado para a operação, etc). Seja específico e direto:\n\n${resumo}`;
   aiCallAndRender(prompt);
+}
+
+/* ─── REVISÃO AUTOMÁTICA DO XML PELA IA (cadastro de preço) ───
+   Fluxo SEM IA: o site calcula tudo sozinho com as regras já implementadas (comportamento padrão).
+   Fluxo COM IA: ao terminar de importar o XML, se houver IA configurada, ela revisa cada item
+   contra a normativa (Convênio ICMS 142/2018, IN DIAT nº 1/2023 do Acre) e sua base de conhecimento
+   tributário, e pode corrigir CST, CEST, tipo/alíquota de ICMS de entrada e IPI usados no cadastro de preço. */
+async function aiAutoReviewXml() {
+  if (!produtos.length) return;
+  const cfg = await getAiConfig();
+  if (!cfg.apiKey) return; // sem IA configurada → mantém o cálculo padrão do site, sem alterações
+
+  const banner = showAiReviewBanner();
+  try {
+    const itens = produtos.map((p, i) => ({
+      index: i,
+      descricao: p.descricao,
+      ncm: p.ncm,
+      cst: p.cstXml || p.csosnXml || null,
+      cest: p.cestResolvido || null,
+      cestFonte: p.cestFonte || null,
+      ufOrigem: p.ufOrigem || null,
+      origCodigo: p.origCodigo || '0',
+      icmsEntradaTipo: p.icmsEntradaTipo,
+      icmsEntradaAliquota: p.icmsEntradaAliquota,
+      icmsEntradaAliquotaInterestadual: p.icmsEntradaAliquotaInterestadual,
+      icmsNotaPct: p.icmsEntradaPct,
+      ipi: p.ipi,
+      ipiCst: p.ipiCstXml,
+      vUnCom: p.vUnCom,
+    }));
+
+    const systemPrompt = `Você é um motor de revisão fiscal para o GestorFiscal PRO. Responda SEMPRE e SOMENTE com um JSON válido, sem markdown, sem texto antes ou depois.
+Sua tarefa: revisar cada item da lista contra a normativa do Estado do Acre (Convênio ICMS 142/2018 e Instrução Normativa DIAT nº 1/2023) e seu conhecimento de NCM/TIPI/CST,
+e retornar correções SOMENTE para os itens em que você tenha certeza de um erro ou melhoria (não repita itens já corretos).
+Formato exato de resposta:
+{"correcoes":[{"index":0,"icmsEntradaTipo":"ST|antecipacao|nenhum","icmsEntradaAliquota":12.34,"ipi":0,"motivo":"explicação curta"}],"resumo":"texto curto resumindo o que foi revisado/alterado"}
+Se nenhuma correção for necessária, retorne {"correcoes":[],"resumo":"..."}.`;
+
+    const userPrompt = `Revise estes itens de uma nota de entrada (destino: Acre):\n${JSON.stringify(itens, null, 0)}`;
+
+    const respText = await callAiRaw(cfg.provider, cfg.apiKey, [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ]);
+
+    const jsonStr = respText.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(jsonStr);
+    const correcoes = Array.isArray(parsed.correcoes) ? parsed.correcoes : [];
+
+    correcoes.forEach(c => {
+      const p = produtos[c.index];
+      if (!p) return;
+      if (c.icmsEntradaTipo != null)     p.icmsEntradaTipo = c.icmsEntradaTipo;
+      if (c.icmsEntradaAliquota != null) p.icmsEntradaAliquotaOverride = parseFloat(c.icmsEntradaAliquota) || 0;
+      if (c.ipi != null)                p.ipi = parseFloat(c.ipi) || 0;
+      p.aiRevisado = true;
+      p.aiMotivo = c.motivo || null;
+    });
+
+    if (correcoes.length) {
+      renderProducts();
+      toast(`IA revisou o XML e ajustou ${correcoes.length} item(ns). Veja o resumo no Chat IA.`, 'success');
+    } else {
+      toast('IA revisou o XML — nenhuma correção necessária.', 'success');
+    }
+
+    aiChatHistory.push({ role: 'user', content: '(revisão automática do XML importado)' });
+    aiChatHistory.push({ role: 'assistant', content: parsed.resumo || 'Revisão concluída sem observações.' });
+    if (document.getElementById('ai-chat-messages')) {
+      appendAiMessage('assistant', `📋 Revisão automática do XML: ${parsed.resumo || 'concluída.'}` + (correcoes.length ? `\n\nItens ajustados: ${correcoes.map(c => `#${c.index+1} (${c.motivo || 'sem motivo informado'})`).join('; ')}` : ''));
+    }
+  } catch(e) {
+    console.warn('Revisão automática da IA falhou, mantendo cálculo padrão do site:', e);
+    toast('IA não conseguiu revisar o XML agora — usando o cálculo padrão do site.', 'warning');
+  } finally {
+    banner.remove();
+  }
+}
+
+function showAiReviewBanner() {
+  const div = document.createElement('div');
+  div.className = 'fixed top-16 right-5 z-[300] bg-violet-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2';
+  div.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 spinner"></i> IA revisando o XML conforme a normativa…';
+  document.body.appendChild(div);
+  lucide.createIcons();
+  return div;
 }
 
 /* ════════════════════════════════════════════════
