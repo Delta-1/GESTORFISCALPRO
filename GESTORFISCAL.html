@@ -627,6 +627,9 @@ input[type=range] { accent-color:#10b981; }
       <button onclick="switchTab(2)" id="nav-2" class="px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
         <i data-lucide="settings" class="w-3.5 h-3.5"></i> Configurações
       </button>
+      <button onclick="switchTab(3)" id="nav-3" class="px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Chat IA
+      </button>
     </div>
   </nav>
 
@@ -799,6 +802,7 @@ input[type=range] { accent-color:#10b981; }
         <button onclick="setCfgTab('calculo')"  id="ctab-calculo"  class="cfg-tab-btn px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800"><i data-lucide="calculator" class="w-3 h-3"></i> Cálculo</button>
         <button onclick="setCfgTab('despesas')" id="ctab-despesas" class="cfg-tab-btn px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800"><i data-lucide="receipt" class="w-3 h-3"></i> Despesas</button>
         <button onclick="setCfgTab('drive')"    id="ctab-drive"    class="cfg-tab-btn px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800"><i data-lucide="hard-drive" class="w-3 h-3"></i> Drive</button>
+        <button onclick="setCfgTab('ia')"       id="ctab-ia"       class="cfg-tab-btn px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800"><i data-lucide="sparkles" class="w-3 h-3"></i> Assistente IA</button>
       </div>
 
       <!-- ─── EMPRESA ─── -->
@@ -972,6 +976,77 @@ input[type=range] { accent-color:#10b981; }
         </div>
       </div>
 
+      <!-- ─── ASSISTENTE IA ─── -->
+      <div id="cfg-panel-ia" class="cfg-panel hidden">
+        <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4">
+          <h3 class="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-violet-500"></i> Configurar IA
+          </h3>
+          <p class="text-xs text-slate-400">Cole sua própria chave de API para habilitar o assistente de IA — ele ajuda a entender o XML, sugerir correções e responder perguntas sobre tabelas fiscais atualizadas.</p>
+
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Provedor</label>
+            <select id="cfg-ai-provider" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+              <option value="anthropic">Anthropic (Claude)</option>
+              <option value="openai">OpenAI (GPT)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Chave de API</label>
+            <input type="password" id="cfg-ai-key" placeholder="sk-ant-... ou sk-..." class="w-full px-3 py-2.5 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-violet-500">
+          </div>
+          <div class="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-xl p-3 text-[11px] text-amber-700 dark:text-amber-400">
+            <strong>Importante:</strong> sua chave fica salva apenas neste navegador (não é enviada aos nossos servidores), mas é visível no código do app — use uma chave com limite de gastos configurado no provedor.
+          </div>
+          <div class="flex gap-2">
+            <button onclick="saveAiConfig()" class="px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5">
+              <i data-lucide="save" class="w-3.5 h-3.5"></i> Salvar
+            </button>
+            <button onclick="testAiConfig()" id="btn-test-ai" class="px-5 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5">
+              <i data-lucide="zap" class="w-3.5 h-3.5"></i> Testar conexão
+            </button>
+          </div>
+          <div id="ai-test-result" class="text-xs"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── TAB 3: CHAT IA ── -->
+    <div id="tab-3" class="tab-pane right space-y-4">
+      <h2 class="text-sm font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
+        <i data-lucide="sparkles" class="w-4 h-4 text-violet-500"></i> Assistente Fiscal IA
+      </h2>
+
+      <div id="ai-no-key" class="hidden bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-2xl p-5 text-center">
+        <i data-lucide="key" class="w-6 h-6 text-amber-500 mx-auto mb-2"></i>
+        <p class="text-xs text-amber-700 dark:text-amber-400 mb-3">Configure sua chave de API para usar o assistente.</p>
+        <button onclick="setCfgTab('ia');switchTab(2)" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl">Ir para Configurações</button>
+      </div>
+
+      <div id="ai-chat-area">
+        <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden flex flex-col" style="height:60vh;">
+          <div id="ai-chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3">
+            <div class="flex gap-2 items-start">
+              <div class="w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-950/40 flex items-center justify-center shrink-0"><i data-lucide="sparkles" class="w-3.5 h-3.5 text-violet-500"></i></div>
+              <div class="bg-slate-100 dark:bg-slate-800 rounded-xl rounded-tl-none px-3 py-2 text-xs text-slate-600 dark:text-slate-300 max-w-[85%]">
+                Olá! Posso ajudar a entender o XML carregado, revisar CST/CEST/NCM, explicar alíquotas e tirar dúvidas sobre tabelas fiscais. Pergunte algo!
+              </div>
+            </div>
+          </div>
+          <div class="border-t border-slate-200 dark:border-slate-800 p-3 flex gap-2">
+            <button onclick="aiAnalisarXmlAtual()" id="btn-ai-analisar" title="Pedir para a IA revisar os produtos carregados" class="px-3 py-2.5 rounded-xl bg-violet-100 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-all shrink-0">
+              <i data-lucide="file-search" class="w-4 h-4"></i>
+            </button>
+            <input type="text" id="ai-chat-input" placeholder="Pergunte sobre o XML, NCM, CST, alíquotas..." onkeydown="if(event.key==='Enter')aiSendMessage();"
+              class="flex-1 px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-violet-500">
+            <button onclick="aiSendMessage()" id="btn-ai-send" class="px-4 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl transition-all shrink-0">
+              <i data-lucide="send" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+        <p class="text-[10px] text-slate-400 mt-2 text-center">A IA pode cometer erros. Sempre confira valores fiscais com um contador antes de aplicar.</p>
+      </div>
     </div>
 
   </main>
@@ -2313,7 +2388,7 @@ function switchTab(n) {
   panes.forEach((p, i) => {
     p.className = 'tab-pane ' + (i === n ? 'active' : (i < n ? 'left' : 'right'));
   });
-  const navBtns = [0,1,2].map(i => document.getElementById('nav-' + i));
+  const navBtns = [0,1,2,3].map(i => document.getElementById('nav-' + i));
   navBtns.forEach((b, i) => {
     b.className = i === n
       ? 'px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all bg-emerald-600 text-white'
@@ -2321,6 +2396,7 @@ function switchTab(n) {
   });
   activeTab = n;
   if (n === 1) loadHistory();
+  if (n === 3) document.getElementById('ai-no-key').classList.toggle('hidden', !!getAiConfig().apiKey);
 }
 
 /* ════════════════════════════════════════════════
@@ -2400,7 +2476,148 @@ function setCfgTab(name) {
   const btn = document.getElementById('ctab-' + name);
   btn.className = 'cfg-tab-btn active-cfg-tab px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1';
   if (name === 'calculo') renderCalculoTab();
+  if (name === 'ia') loadAiConfigToForm();
   lucide.createIcons();
+}
+
+/* ════════════════════════════════════════════════
+   ASSISTENTE IA
+════════════════════════════════════════════════ */
+function getAiConfig() {
+  try {
+    return JSON.parse(localStorage.getItem('gf_ai_config') || '{}');
+  } catch(e) { return {}; }
+}
+
+function saveAiConfig() {
+  const provider = document.getElementById('cfg-ai-provider').value;
+  const apiKey   = document.getElementById('cfg-ai-key').value.trim();
+  if (!apiKey) { toast('Cole uma chave de API válida.', 'warning'); return; }
+  localStorage.setItem('gf_ai_config', JSON.stringify({ provider, apiKey }));
+  toast('Configuração de IA salva neste navegador!', 'success');
+}
+
+function loadAiConfigToForm() {
+  const cfg = getAiConfig();
+  if (cfg.provider) document.getElementById('cfg-ai-provider').value = cfg.provider;
+  if (cfg.apiKey)   document.getElementById('cfg-ai-key').value = cfg.apiKey;
+}
+
+async function testAiConfig() {
+  const provider = document.getElementById('cfg-ai-provider').value;
+  const apiKey   = document.getElementById('cfg-ai-key').value.trim();
+  if (!apiKey) { toast('Cole uma chave de API antes de testar.', 'warning'); return; }
+  const result = document.getElementById('ai-test-result');
+  result.innerHTML = '<span class="text-slate-400">Testando…</span>';
+  try {
+    const resp = await callAiRaw(provider, apiKey, [{ role: 'user', content: 'Responda apenas "ok" se você está funcionando.' }]);
+    result.innerHTML = `<span class="text-emerald-500 font-bold">✓ Conectado! Resposta: "${resp.slice(0,60)}"</span>`;
+  } catch(e) {
+    result.innerHTML = `<span class="text-red-500 font-bold">✗ Erro: ${e.message}</span>`;
+  }
+}
+
+// Chamada direta à API do provedor (Anthropic ou OpenAI), retorna o texto da resposta.
+async function callAiRaw(provider, apiKey, messages) {
+  if (provider === 'openai') {
+    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({ model: 'gpt-4o-mini', max_tokens: 1024, messages }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error?.message || 'Falha na chamada à API OpenAI');
+    return data.choices?.[0]?.message?.content || '';
+  }
+  // Anthropic (padrão)
+  const systemMsg = messages.find(m => m.role === 'system');
+  const userMsgs  = messages.filter(m => m.role !== 'system');
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-3-5-sonnet-20241022',
+      max_tokens: 1024,
+      system: systemMsg?.content || undefined,
+      messages: userMsgs,
+    }),
+  });
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data.error?.message || 'Falha na chamada à API Anthropic');
+  return data.content?.[0]?.text || '';
+}
+
+let aiChatHistory = [];
+
+function appendAiMessage(role, text) {
+  const box = document.getElementById('ai-chat-messages');
+  const isUser = role === 'user';
+  const div = document.createElement('div');
+  div.className = 'flex gap-2 items-start' + (isUser ? ' justify-end' : '');
+  div.innerHTML = isUser
+    ? `<div class="bg-emerald-600 text-white rounded-xl rounded-tr-none px-3 py-2 text-xs max-w-[85%] whitespace-pre-wrap">${text}</div>`
+    : `<div class="w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-950/40 flex items-center justify-center shrink-0"><i data-lucide="sparkles" class="w-3.5 h-3.5 text-violet-500"></i></div>
+       <div class="bg-slate-100 dark:bg-slate-800 rounded-xl rounded-tl-none px-3 py-2 text-xs text-slate-600 dark:text-slate-300 max-w-[85%] whitespace-pre-wrap">${text}</div>`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+  lucide.createIcons();
+  return div;
+}
+
+function buildFiscalSystemPrompt() {
+  const regime = empresaData.regime || 'SN';
+  const dataAtual = new Date().toLocaleDateString('pt-BR');
+  return `Você é um assistente fiscal especializado em tributação brasileira (ICMS, ICMS-ST, IPI, PIS/COFINS, Simples Nacional, Lucro Presumido/Real), atuando dentro do app GestorFiscal PRO.
+Data de hoje: ${dataAtual}. Regime tributário da empresa atual: ${regime}.
+Responda em português, de forma direta e objetiva, citando a legislação quando souber (ex: Convênio ICMS 142/2018, Resolução Senado 22/89).
+Sempre que não tiver certeza de um valor numérico exato (alíquota, MVA, etc.), avise claramente que é uma estimativa e recomende confirmar com um contador ou a Sefaz do estado.
+Se o usuário enviar dados de produtos (NCM, CST, CEST, valores), ajude a revisar e apontar inconsistências, mas nunca afirme um valor fiscal com 100% de certeza sem fonte oficial.`;
+}
+
+async function aiCallAndRender(userText) {
+  const cfg = getAiConfig();
+  if (!cfg.apiKey) { toast('Configure sua chave de API em Configurações → Assistente IA.', 'warning'); return; }
+
+  appendAiMessage('user', userText);
+  aiChatHistory.push({ role: 'user', content: userText });
+
+  const thinking = appendAiMessage('assistant', '<i data-lucide="loader-2" class="w-3 h-3 spinner inline-block"></i> Pensando…');
+  document.getElementById('btn-ai-send').disabled = true;
+
+  try {
+    const messages = [{ role: 'system', content: buildFiscalSystemPrompt() }, ...aiChatHistory];
+    const respText = await callAiRaw(cfg.provider, cfg.apiKey, messages);
+    thinking.querySelector('div:last-child').textContent = respText;
+    aiChatHistory.push({ role: 'assistant', content: respText });
+  } catch(e) {
+    thinking.querySelector('div:last-child').textContent = '⚠️ Erro ao consultar a IA: ' + e.message;
+  } finally {
+    document.getElementById('btn-ai-send').disabled = false;
+  }
+}
+
+function aiSendMessage() {
+  const input = document.getElementById('ai-chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  aiCallAndRender(text);
+}
+
+function aiAnalisarXmlAtual() {
+  if (!produtos.length) { toast('Carregue um XML primeiro na aba "Processar XML".', 'warning'); return; }
+  const resumo = produtos.map((p, i) => {
+    const cst  = p.cstXml || p.csosnXml || 'sem CST';
+    const cest = p.cestResolvido ? `${p.cestResolvido} (${p.cestFonte})` : 'sem CEST';
+    return `${i+1}. ${p.descricao} | NCM ${p.ncm} | CST/CSOSN ${cst} | CEST ${cest} | qtd ${p.qCom} | R$ ${p.vUnCom.toFixed(2)}/un | ICMS nota: ${p.icmsEntradaPct != null ? p.icmsEntradaPct.toFixed(2)+'%' : 'não informado'} | IPI: ${p.ipi}% | origem ${p.ufOrigem || '?'}`;
+  }).join('\n');
+  const prompt = `Analise os itens desta nota fiscal de entrada que carreguei no sistema e aponte qualquer inconsistência que você notar (CST incompatível com o NCM, CEST ausente em produto que parece sujeito a ST, alíquota de ICMS fora do esperado para a operação, etc). Seja específico e direto:\n\n${resumo}`;
+  aiCallAndRender(prompt);
 }
 
 /* ════════════════════════════════════════════════
