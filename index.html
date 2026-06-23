@@ -1947,6 +1947,9 @@ function processXmlFile(file) {
         // CST/CSOSN real do ICMS — direto do grupo ICMSxx da nota (não estimado)
         const cstXml   = det.querySelector('imposto ICMS CST')?.textContent || null;
         const csosnXml = det.querySelector('imposto ICMS CSOSN')?.textContent || null;
+        // CEST — obrigatório para produtos sujeitos a ST/Antecipação (Convênio ICMS 142/2018).
+        // Sem CEST na nota, não há base legal para destacar ICMS de entrada.
+        const cest = det.querySelector('prod CEST')?.textContent || null;
 
         // IPI: lê do XML (<pIPI>); fallback TIPI (não exibido na tela de Custo de Entrada — SN/LP)
         const pIpiXml = parseFloat(det.querySelector('pIPI')?.textContent || '');
@@ -1962,7 +1965,10 @@ function processXmlFile(file) {
         const fiscal = getNcmFiscal(ncm);
 
         // Automação fiscal: ICMS de entrada (ST / Antecipação Parcial) — Estado do Acre
-        const icmsEntradaAuto = getIcmsEntradaAcre(ncm, ufOrigem, origCodigo);
+        // Só calcula se o item tiver CEST na nota — sem CEST não há base legal para ST/Antecipação.
+        const icmsEntradaAuto = cest
+          ? getIcmsEntradaAcre(ncm, ufOrigem, origCodigo)
+          : { tipo: 'nenhum', aliquota: 0, aliquotaInterestadual: null };
 
         return {
           descricao: det.querySelector('xProd')?.textContent || '—',
@@ -1977,6 +1983,7 @@ function processXmlFile(file) {
           ufOrigem,                           // UF do fornecedor (origem da mercadoria)
           origCodigo,                          // código <orig> (0-8) — indica importação
           cstXml, csosnXml,                    // CST/CSOSN real do ICMS, lido direto da nota
+          cest,                                // CEST — se ausente, sem ST/Antecipação
           icmsEntradaTipo: icmsEntradaAuto.tipo,                       // 'ST' | 'antecipacao' | 'nenhum'
           icmsEntradaAliquota: icmsEntradaAuto.aliquota,               // % automático
           icmsEntradaAliquotaInterestadual: icmsEntradaAuto.aliquotaInterestadual, // 12 | 7 | 4
@@ -2850,6 +2857,7 @@ function renderSidebarDetail(alq, defaultMargem, defaultFrete, icmsE) {
             ${ICMS_TIPO_LABEL[icmsEntradaTipo] || icmsEntradaTipo}
           </span>
           <span class="text-[10px] text-slate-400">NCM ${p.ncm} · origem ${p.ufOrigem || '—'}</span>
+          ${p.cest ? `<span class="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-[9px] font-bold">CEST ${p.cest}</span>` : `<span class="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 text-[9px] font-bold">Sem CEST</span>`}
           ${p.icmsEntradaAliquotaInterestadual != null ? `<span class="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-[9px] font-bold">Alíq. interestadual: ${p.icmsEntradaAliquotaInterestadual}%${Number(p.origCodigo) ? ' (importado)' : ''}</span>` : ''}
         </div>
         <div class="grid grid-cols-2 gap-2 mb-2">
@@ -2864,7 +2872,7 @@ function renderSidebarDetail(alq, defaultMargem, defaultFrete, icmsE) {
             <div class="px-2 py-1.5 text-xs font-bold text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg">${fmtBRL(icmsEntradaVal)}</div>
           </div>
         </div>
-        ${icmsEntradaVal > 0 ? row(`ICMS Entrada (${icmsEntradaAliquota}% sobre R$ ${precoCompra.toFixed(2)})`, icmsEntradaVal, 'text-orange-500') : `<div class="text-[10px] text-slate-400 py-1 italic">Sem incidência de ICMS-ST/Antecipação para este item (operação interna ou NCM isento).</div>`}
+        ${icmsEntradaVal > 0 ? row(`ICMS Entrada (${icmsEntradaAliquota}% sobre R$ ${precoCompra.toFixed(2)})`, icmsEntradaVal, 'text-orange-500') : `<div class="text-[10px] text-slate-400 py-1 italic">${!p.cest ? 'Item sem CEST na nota — sem base legal para destacar ICMS-ST/Antecipação.' : 'Sem incidência de ICMS-ST/Antecipação para este item (operação interna ou NCM isento).'}</div>`}
         <div class="flex items-center justify-between pt-2 mt-1 border-t-2 border-slate-200 dark:border-slate-700">
           <span class="text-[11px] font-extrabold text-slate-600 dark:text-slate-300"><span class="text-slate-400">(=)</span> CMV (Custo da Mercadoria)</span>
           <span class="text-sm font-extrabold text-blue-700 dark:text-blue-300">${fmtBRL(cmv)}</span>
