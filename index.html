@@ -1178,6 +1178,7 @@ function formatCest(v) {
 const ICMS_AC_CEST_NCM = {
   '2401':'0400100', '2402':'0400100', '2403':'0400200', // cigarros/tabaco
   '2523':'0500100',                                      // cimento
+  '3924':'1400601',                                      // utensílios de mesa/cozinha de plástico (talheres, copos, etc.)
 };
 
 // NCM (4 dígitos) sujeitos a Substituição Tributária no Acre, com alíquota efetiva de ST
@@ -2003,9 +2004,15 @@ function processXmlFile(file) {
         // Sem CEST na nota, não há base legal para destacar ICMS de entrada.
         const cest = det.querySelector('prod CEST')?.textContent || null;
 
-        // IPI: lê do XML (<pIPI>); fallback TIPI (não exibido na tela de Custo de Entrada — SN/LP)
-        const pIpiXml = parseFloat(det.querySelector('pIPI')?.textContent || '');
-        const ipiRate = !isNaN(pIpiXml) ? pIpiXml : getIpiFromNcm(ncm);
+        // IPI: lê do XML (<pIPI>); respeita CST de não-tributação/suspensão/isenção antes de
+        // cair no fallback da TIPI (não exibido na tela de Custo de Entrada — SN/LP).
+        // CST IPI: 02,03,04,05,52,53,54,55 = isento/não-tributado/imune/suspensão → sempre 0%.
+        const pIpiXml  = parseFloat(det.querySelector('pIPI')?.textContent || '');
+        const ipiCstXml = det.querySelector('imposto IPI CST')?.textContent || null;
+        const IPI_CST_NAO_TRIBUTADO = ['02','03','04','05','52','53','54','55'];
+        const ipiRate = IPI_CST_NAO_TRIBUTADO.includes(ipiCstXml)
+          ? 0
+          : (!isNaN(pIpiXml) ? pIpiXml : getIpiFromNcm(ncm));
 
         // Frete por unidade em R$ — proporcional ao valor do item na NF
         const freqProporcao = vTotalProd > 0 ? vProd / vTotalProd : 1 / dets.length;
@@ -2025,6 +2032,7 @@ function processXmlFile(file) {
           descricao: det.querySelector('xProd')?.textContent || '—',
           ncm, qCom, vUnCom,
           ipi: ipiRate,
+          ipiCstXml,           // CST do IPI na nota — define se é tributado, isento, suspenso etc.
           freteRS,             // frete em R$/unidade vindo do XML
           freteXml: freteRS,   // cópia imutável para referência
           ncmFiscal: fiscal,   // dados CST/ST/isenção
