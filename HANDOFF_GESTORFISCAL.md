@@ -1,5 +1,8 @@
 # GestorFiscal PRO — Pacote de Migração para Nova Conta
 
+> Última atualização: 2026-06-23 — inclui a unificação da fórmula de preço entre as 4 telas
+> e os ajustes de cálculo pedidos pelo cliente (ver "Motor de precificação" abaixo).
+
 Este documento é para o **próximo Claude** (em outra conta) configurar o projeto do zero
 em uma **nova conta Supabase**, mantendo tudo funcionando exatamente como está.
 
@@ -81,6 +84,33 @@ Publicado via GitHub Pages.
   comentário no código); só os NCMs comentados como "oficial" foram confirmados na normativa.
 - **Sem integração de IA** — foi removida a pedido do cliente, não reimplementar sem pedir.
 
+### Motor de precificação (importante — leia antes de mexer em preço)
+
+Todo o cálculo de custo/preço passa por **duas funções centrais** (não recalcular nada manualmente
+em outro lugar — as 4 telas, tabela/impressão/lista lateral/detalhe, usam exatamente as mesmas):
+
+```js
+calcCustoEfetivo(p, freteRS, icmsEntPct, ipi)
+// = vUnCom - desconto - icmsDesonerado(Suframa) + freteRS + outrasDespesas
+//   + vUnCom*(icmsEntPct/100 + ipi/100) + (vUnCom * aliquotaST_Antecipacao/100)
+
+calcPreco(custoEf, aliquota, margem)
+// = custoEf / (1 - aliquota - margem/100 - despesasTotalPct/100)
+```
+
+Pontos que já geraram confusão e foram resolvidos — não reabrir sem necessidade real:
+
+- **Margem é sobre o PREÇO DE VENDA, não sobre o custo** (margem de contribuição clássica). Isso é
+  intencional e foi confirmado com o cliente — o "Markup" exibido na tela (maior que a margem%) é
+  o resultado matemático correto, não um bug. A UI já rotula os dois separadamente
+  ("Margem (% sobre a venda)" vs "Markup (% sobre o custo)") para evitar reclamação de novo.
+- **ICMS Desonerado (Suframa) reduz o CMV** automaticamente (foi pedido explicitamente pelo cliente).
+- **Lucro Presumido (LP) não debita ICMS na saída** — decisão do cliente, não reimplementar sem pedir.
+- **PIS/COFINS na saída só é cobrado se o NCM exigir** — produtos com CST PIS/COFINS `06` (alíquota
+  zero) ou `07` (isento), segundo `NCM_FISCAL`, não geram débito de PIS/COFINS.
+- **Impressão (relatório PDF)**: colunas renomeadas para "Valor de Compra" / "Valor de Custo";
+  colunas de Frete e IPI foram **removidas** a pedido do cliente (só aparecem na tela, não no PDF).
+
 ## Arquivos deste pacote
 
 | Arquivo | Para que serve |
@@ -96,3 +126,10 @@ Publicado via GitHub Pages.
 - **"Onde fica a chave do WhatsApp?"** — constante `WHATSAPP_NUMERO` no JS, não depende de banco.
 - **"Tem chave do Stripe no código?"** — não, só os Payment Links públicos (URLs `buy.stripe.com/...`),
   que são seguros de expor. A secret key do Stripe nunca deve ir para o frontend.
+- **"Por que existem 4 lugares calculando preço (tabela, impressão, sidebar lista, sidebar detalhe)?"**
+  — historicamente cada um tinha sua própria fórmula e elas divergiam silenciosamente (bug real,
+  já corrigido). Hoje todas chamam `calcCustoEfetivo()` + `calcPreco()`. Se for adicionar um novo
+  componente de custo (ex: mais um campo do XML), adicione dentro de `calcCustoEfetivo` — nunca
+  direto em uma das 4 telas, ou a divergência volta.
+- **"`ai_config` ainda existe no banco, devo recriar na nova conta?"** — não precisa. É sobra de uma
+  feature de IA removida; o SQL de migração já deixa essa tabela comentada/opcional.
