@@ -2084,9 +2084,20 @@ function calcAliquota(regime, anexo, rba) {
   return Math.max(0, (rba * faixa.nom - faixa.ded) / rba);
 }
 
-// freteRS = valor do frete em R$ por unidade (não percentual)
-function calcPreco(custo, freteRS, icmsEnt, aliquota, margem, ipi = 0) {
-  const custoEf = custo + freteRS + custo * (icmsEnt / 100 + ipi / 100);
+// Custo Efetivo único, usado por TODAS as telas (tabela, impressão, sidebar lista e detalhe),
+// para que o preço sugerido nunca divirja entre as visualizações.
+// freteRS = valor do frete em R$ por unidade (não percentual).
+function calcCustoEfetivo(p, freteRS, icmsEntPct, ipi) {
+  const desconto         = p.desconto ?? 0;
+  const outrasDespesas   = p.outrasDespesas ?? 0;
+  const icmsDesonerado   = p.icmsDesonerado ?? 0;
+  const stAliquota       = p.icmsEntradaAliquotaOverride ?? p.icmsEntradaAliquota ?? 0;
+  const icmsEntradaSTVal = p.vUnCom * stAliquota / 100; // ICMS-ST/Antecipação automático (Acre)
+  return p.vUnCom - desconto - icmsDesonerado + freteRS + outrasDespesas
+       + p.vUnCom * (icmsEntPct / 100 + ipi / 100) + icmsEntradaSTVal;
+}
+
+function calcPreco(custoEf, aliquota, margem) {
   const div = 1 - aliquota - margem / 100 - (despesasTotalPct / 100);
   if (div <= 0) return custoEf * 2;
   return custoEf / div;
@@ -2122,8 +2133,8 @@ function renderProducts() {
     const icms   = p.icmsEntradaPct ?? icmsE; // % de ICMS — real da nota quando disponível
     const fiscal = p.ncmFiscal || getNcmFiscal(p.ncm);
 
-    const preco   = calcPreco(p.vUnCom, freteR, icms, alq, m, ipi);
-    const custoEf = p.vUnCom + freteR + p.vUnCom * (icms/100 + ipi/100);
+    const custoEf = calcCustoEfetivo(p, freteR, icms, ipi);
+    const preco   = calcPreco(custoEf, alq, m);
     totCusto += custoEf * p.qCom;
     totVenda += preco * p.qCom;
 
@@ -2281,8 +2292,8 @@ function printReport() {
     const freteR = p.freteRS      ?? freteGlobal;
     const ipi    = p.ipi ?? getIpiFromNcm(p.ncm);
     const icms   = p.icmsEntradaPct ?? icmsE;
-    const preco   = p.ajuste || calcPreco(p.vUnCom, freteR, icms, alq, m, ipi);
-    const custoEf = p.vUnCom + freteR + p.vUnCom * (icms/100 + ipi/100);
+    const custoEf = calcCustoEfetivo(p, freteR, icms, ipi);
+    const preco   = p.ajuste || calcPreco(custoEf, alq, m);
     total += preco * p.qCom;
     const bg = i % 2 === 0 ? '#fff' : '#f8fafc';
     tbody.innerHTML += `
@@ -2750,7 +2761,8 @@ function renderSidebar() {
     const freteR = p.freteRS      ?? freteGlobal;
     const ipiP   = p.ipi ?? getIpiFromNcm(p.ncm);
     const icmsP  = p.icmsEntradaPct ?? icmsE;
-    const preco  = p.ajuste || calcPreco(p.vUnCom, freteR, icmsP, alq, m, ipiP);
+    const custoEfP = calcCustoEfetivo(p, freteR, icmsP, ipiP);
+    const preco  = p.ajuste || calcPreco(custoEfP, alq, m);
     const div = document.createElement('div');
     div.className = 'prod-sidebar-item' + (i === selectedProductIdx ? ' selected' : '');
     div.onclick = () => { selectedProductIdx = i; renderSidebar(); };
@@ -2785,6 +2797,7 @@ function renderSidebarDetail(alq, defaultMargem, defaultFrete, icmsE) {
   const freteVal        = f;                                // vFrete rateado — já em R$/unidade
   const outrasDespesas  = p.outrasDespesas  ?? 0;          // vOutro — direto do XML
   const icmsDesonerado  = p.icmsDesonerado  ?? 0;          // vICMSDeson — benefício Suframa/ZFM-ALC
+  const icmsRegular     = p.icmsEntradaPct  ?? icmsE;       // ICMS normal da nota (pICMS/vICMS), igual às demais telas
 
   // ── ICMS DE ENTRADA — automação fiscal (NCM + UF origem → Estado do Acre) ──
   const icmsEntradaTipo      = p.icmsEntradaTipo      ?? 'nenhum';
@@ -2792,13 +2805,12 @@ function renderSidebarDetail(alq, defaultMargem, defaultFrete, icmsE) {
   const icmsEntradaVal       = precoCompra * icmsEntradaAliquota / 100;
   const ICMS_TIPO_LABEL = { ST:'Substituição Tributária', antecipacao:'Antecipação Parcial', nenhum:'Sem incidência' };
 
-  // ── CMV: Custo Final = Valor de Entrada - Desconto - ICMS Desonerado(Suframa) + Frete + Outras Despesas + ICMS Entrada ──
-  const cmv = precoCompra - desconto - icmsDesonerado + freteVal + outrasDespesas + icmsEntradaVal;
+  // ── CMV: usa a MESMA função das demais telas (tabela/impressão/lista), para nunca divergir.
+  const cmv = calcCustoEfetivo(p, freteVal, icmsRegular, ipi);
   const custoContabil = cmv;
 
   // ── PREÇO DE VENDA ────────────────────────────────
-  const divisor        = 1 - alq - m / 100 - despPct / 100;
-  const precoVenda     = p.ajuste || (divisor > 0 ? cmv / divisor : cmv * 2);
+  const precoVenda     = p.ajuste || calcPreco(cmv, alq, m);
 
   // PIS/COFINS na saída só incide se for obrigatório pela classificação fiscal do NCM (Tabela TIPI/NCM_FISCAL).
   // CST '06' (alíquota zero) e '07' (isento) não geram débito. Sem classificação, assume obrigatório (mais seguro).
@@ -2946,7 +2958,7 @@ function renderSidebarDetail(alq, defaultMargem, defaultFrete, icmsE) {
           </div>
         </div>
         ${row('Valor ICMS Desonerado (vICMSDeson, do XML)', icmsDesonerado, 'text-emerald-500')}
-        <div class="text-[9px] text-slate-400 italic pt-1">Esses dados vêm direto da nota fiscal (grupo ICMS do item e dados do destinatário) — não há estimativa aqui. O valor desonerado é informativo e não reduz o CMV automaticamente.</div>
+        <div class="text-[9px] text-slate-400 italic pt-1">Esses dados vêm direto da nota fiscal (grupo ICMS do item e dados do destinatário) — não há estimativa aqui. O valor desonerado é descontado automaticamente do CMV abaixo.</div>
       </div>
     </div>` : ''}
 
