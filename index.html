@@ -3091,10 +3091,13 @@ function renderSidebarDetail(alq, defaultMargem, defaultFrete, icmsE) {
           <div class="text-[9px] opacity-70 mt-0.5">× ${p.qCom} un = ${fmtBRL(precoVenda * p.qCom)}</div>
         </div>
         <div class="text-right">
-          <div class="text-[9px] opacity-70 uppercase">MC%</div>
+          <div class="text-[9px] opacity-70 uppercase">Margem (% sobre a venda)</div>
           <div class="text-3xl font-extrabold">${mcPct.toFixed(1)}%</div>
-          <div class="text-[9px] opacity-70 mt-0.5">Markup: ${markup.toFixed(1)}%</div>
         </div>
+      </div>
+      <div class="mt-2 pt-2 border-t border-white/20 flex items-center justify-between text-[10px]">
+        <span class="opacity-80">Markup (% sobre o custo de R$ ${cmv.toFixed(2)})</span>
+        <span class="font-bold">${markup.toFixed(1)}% &nbsp;=&nbsp; ${fmtBRL(precoVenda - cmv)} a mais que o custo</span>
       </div>
     </div>
 
